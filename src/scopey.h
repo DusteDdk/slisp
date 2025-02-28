@@ -1,0 +1,50 @@
+#ifndef SCOPEY_H_INCLUDED
+#define SCOPEY_H_INCLUDED
+
+#include <string>
+#include <unordered_map>
+#include <stack>
+#include <vector>
+#include <algorithm>
+#include <memory>
+
+#include "fundamental.h"
+
+
+class ScopeItem;
+using ScopeStore = std::unordered_map<std::string, ScopeItem>;
+
+class ScopeItem {
+    std::stack<FundamentalRef> stack;
+    std::string name;
+    ScopeStore *owner;
+
+public:
+    ScopeItem(std::string n, ScopeStore* o);
+    void pop();
+    void push(FundamentalRef value);
+    void set(FundamentalRef value);
+    FundamentalRef read();
+};
+
+class ScopeCreep {
+    ScopeStore storage;
+    std::stack<std::vector<ScopeItem*>> scopeStack;
+    std::vector<std::string> stackTrace;
+
+
+    FundamentalRef writeToGlobal(const std::string& varName, FundamentalRef value);
+    FundamentalRef writeToKnown(const std::string& varName, FundamentalRef value);
+    FundamentalRef writeToScope(const std::string& varName, FundamentalRef value);
+
+public:
+    ScopeCreep() = default;
+    std::string trace();
+    FundamentalRef read(const std::string& varName);
+    FundamentalRef write(std::shared_ptr<FundamentalVariableDefinition> vd);
+    bool has(std::string& varName);
+    void enterScope(std::string n);
+    void exitScope();
+};
+
+#endif // SCOPEY_H_INCLUDED

@@ -1,0 +1,108 @@
+// Just a lil test
+{
+
+
+	0
+	{loop:$
+		var2:?
+		var2:
+		(? $
+			(imp
+				(print "var2 exists: " var2 nl)
+				var2:: (+ var2 1 ))
+			(imp
+				(print "var2 does not exist, yet.." nl)
+			0))
+
+		(+ loop 1)
+		(? (< 1000 ) @)
+	}
+
+
+	(print "Enter a number: ")
+	numa: (read)
+	(print nl "Enter another number: ")
+	numb: (read)
+	res: (+ numa numb)
+	(print nl numa " + " numb " = " $ nl)
+
+	(print "Enter a variable name to set:")
+	(read): res
+	
+	(print nl "Enter the variable name to read: ")
+		varName: (read)
+
+		(print nl "The value of " varName " is " (deref varName) nl)
+
+
+	(+ 1 2)
+	(print "I can do math: " (/ (+ 1 2 3 4) 2) nl)
+	(print "Who _ARE_ you? ")
+	uName: (read)
+	{ // Alternative IMP syntax
+		backup: $
+		uName: (sprint "Local_" uName "_scoped")
+		(print "Shadowed variable: " uName nl)
+		backup
+	}
+	(print "Hello '" $ "'" nl)
+	(print "Escape test: \"" uName "\"" nl)
+	41.5
+	(+ .5)
+	(print "Oh yeah? We can do that " $ nl)
+	(print "Some comparison tests" nl)
+	"a"
+	(? (= "a") (print "a = a" nl) (print "a not a" nl))
+	(? (= "a" "a") (print "a = a" nl) (print "a not a" nl))
+	(? (= "a" "b") (print "a = b" nl) (print "a not b" nl))
+	0
+	(? (= 0) (print "0 = 0" nl) (print "0 not 0" nl))
+	(? (= 1 2) (print "1 = 2" nl) (print "1 not 2" nl))
+	(? (= 2 2) (print "2 = 2" nl) (print "2 not 2" nl))
+
+	(print "Div test: " ( / 1 ( - 0 2 )  ) nl)
+
+
+	2
+	(print $ nl)
+	(print ( < 6 ) nl)
+	(print ( < 6 6 ) nl)
+	7
+	(print $ nl)
+	(print ( < 6 ) nl)
+	(print ( < 7 6 ) nl)
+
+	(print $ nl)
+	(print ( > 6 ) nl)
+	(print ( > 6 3) nl)
+	(print ( > 6 6 ) nl)
+	2
+	(print $ nl)
+	(print ( > 6 ) nl )
+	(print ( > 6 3) nl)
+
+	var: (+ 2 2)
+
+	(print "A loop:" nl)
+	5
+	(imp
+		(print "  Loop:  " $ nl)
+		(- 1)
+		(? (! (= 0)) (imp $ @))
+		(print "Loop ends>" $ nl)
+	)
+	(print "The previously set variable is " var nl)
+	(print "> " $ nl)
+	(print "One more time, " uName " ? [y/N]")
+	(read)
+	(? (= "y")
+		(imp
+			(print "Okay, lets do anoother one!" nl nl)
+		@) // Jump back to start of closest imp
+
+	)
+
+
+
+
+}
