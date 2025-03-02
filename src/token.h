@@ -5,16 +5,15 @@
 
 enum class Token : int_fast8_t {
 	Loop=1,
-	Skip,
 	Identifier,
 	Number,
 	String,
+	IBegin,
+	IEnd,
 	Begin,
 	End,
 	Eof,
-	UnExpEof,
 	SyntaxError,
-	Comment,
 	Name,
 };
 

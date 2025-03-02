@@ -1,7 +1,6 @@
 //
-{
+{imp
     123
-    var: "print"
     (print)
 }
 

@@ -9,16 +9,17 @@ class Toker {
 	bool replay = false;
 	char c=0;
 	bool getC();
-	bool consumeWhitespace(bool breakOnNewLine);
 	Token flush(Token t);
 	bool peeked = false;
 	std::string acc;
 	Token peekToken;
-	std::string generated;
-public:
-	Toker(std::istream& inStream) : in(inStream), acc(""), peekToken(Token::Skip), generated("") { c = 0; };
+	std::string peekStrBackup;
+	public:
+	Toker(std::istream& inStream) : in(inStream), acc(""), peekToken(Token::Eof) { c = 0; line=1; column=0; };
 
 	std::string str;
+
+	int line, column;
 
 	Token nextToken();
 	Token peek();

@@ -27,6 +27,8 @@ struct Node {
 	Node(NodeType type) : t(type) {};
 	virtual ~Node() = default;
 	virtual std::string toString();
+	int line;
+	int column;
 };
 
 using NodeRef = std::shared_ptr<Node>;
@@ -73,13 +75,12 @@ struct NodeErr : public NodeStr {
 
 class Parsey {
 	Toker toker;
-	void skipToNextSemanticToken(Token& t);
 	NodeRef parseNode(Token t);
-	bool verbose;
-	template <typename... Args> void log(std::format_string<Args...> fmt, Args&&... args) const;
+
+	NodeRef setNodeInfo(NodeRef n);
 public:
 
-	Parsey(Toker toker, bool verbose=false);
+	Parsey(Toker toker);
 	NodeRef program;
 };
 

@@ -1,7 +1,4 @@
-// Just a lil test
 {
-
-
 	0
 	{loop:$
 		var2:?
@@ -18,7 +15,6 @@
 		(? (< 1000 ) @)
 	}
 
-
 	(print "Enter a number: ")
 	numa: (read)
 	(print nl "Enter another number: ")
@@ -28,11 +24,19 @@
 
 	(print "Enter a variable name to set:")
 	(read): res
-	
+	// Does this throw you off?
+	// and this?
 	(print nl "Enter the variable name to read: ")
-		varName: (read)
+        varName: (read) (print nl "The value of " varName " is "
+(
+deref
+varName 123
 
-		(print nl "The value of " varName " is " (deref varName) nl)
+
+
+)
+nl
+)
 
 
 	(+ 1 2)

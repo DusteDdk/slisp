@@ -11,28 +11,21 @@ bool Toker::getC() {
 		return true;
 	}
 
-	if (generated.length()) {
-		c = generated[0];
-		generated = generated.substr(1);
-		return true;
+	bool isEof = !!in.get(c);
+
+	if(c=='\n') {
+			line++;
+			column=0;
 	}
 
-	return !!in.get(c);
-}
-
-bool Toker::consumeWhitespace(bool breakOnNewLine) {
-	while (isspace(c)) {
-		if (!in.get(c)) {
-			return false;
-		}
-
-		if (breakOnNewLine && (c == '\r' || c == '\n')) {
-			return true;
-		}
+	if( c!= '\n' && c != '\r') {
+		column++;
 	}
 
-	return true;
+	//std::println("eof: {} Line {} Column: {} Character: {}", isEof, line, column, c);
+	return isEof;
 }
+
 
 // Identifiers are special tokens, they're "everything that's not whitespace or consumed into other tokens"
 // So we emit them whenever we've accumulated something that fits that category, until whitespace or something else to consume.
@@ -60,6 +53,7 @@ Token Toker::peek() {
 
 
 Token Toker::nextToken() {
+
 	// We might need one extra call in case there was something in acc before eof
 	if (eof) {
 		return Token::Eof;
@@ -71,14 +65,12 @@ Token Toker::nextToken() {
 	}
 
 	while (getC()) {
+
 		if (isspace(c)) {
-			
 			if (acc.length()) {
 				return flush(Token::Identifier);
 			}
-			if (!consumeWhitespace(false)) {
-				return flush(Token::Eof);
-			}
+			continue;
 		}
 		switch (c) {
 		case ':':
@@ -87,25 +79,22 @@ Token Toker::nextToken() {
 			return flush(Token::Loop);
 		case '/': //A comment
 			if (acc.length() && acc[0] == '/') {
-				acc = "";
-				str = "";
-				if ( !getC() || !consumeWhitespace(true)) {
-					return Token::Comment;
-				}
+				acc="";
 				do {
 					str += c;
 				} while (getC() && c != '\n' && c != '\r');
-				return Token::Comment;
+				replay=true;
+				continue;
 			}
 			break;
 
 		case '{':
-			generated = std::format("imp {}", generated); // ? is it here?
-			[[fallthrough]];
+			return flush(Token::IBegin);
 		case '(':
 			return flush(Token::Begin);
 
-		case '}': // } does nothing different at all
+		case '}':
+			return flush(Token::IEnd);
 		case ')':
 			return flush(Token::End);
 		case '"':
@@ -114,7 +103,7 @@ Token Toker::nextToken() {
 				return flush(Token::Identifier);
 			}
 			str= "";
-			while (in.get(c)) {
+			while (getC()) {
 				if (c == '"') {
 					if (str.length() && str.back() == '\\') {
 						str.pop_back();
@@ -125,7 +114,8 @@ Token Toker::nextToken() {
 				}
 				str += c;
 			}
-			return Token::UnExpEof;
+			str = std::format("SyntaxError: Unterminated string: {}{}", str.substr(0,10), (str.length()>10)?"...":".");
+			return Token::SyntaxError;
 		}
 
 		// Numbers must either start with a digit, or have a whitespace before the dot.
@@ -135,9 +125,10 @@ Token Toker::nextToken() {
 			str = "";
 			do {
 				str += c;
-				if (!in.get(c)) {
+				if (!getC()) {
 					return Token::Eof;
 				}
+
 				if (c == '.') {
 					if (hasDot) {
 						str = std::format("Error: Two dots in one number ? '{}'", str);

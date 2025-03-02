@@ -1,0 +1,12 @@
+{imp
+
+    (print "hello" nl)
+    a: 10
+    b: 20
+
+    sum: (+ a b)
+    pro: (* a b)
+    fac: (/ a b)
+    (print "Sum: " sum " product: "pro" factor: "fac" ..."nl)
+    ""
+}

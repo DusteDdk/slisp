@@ -7,6 +7,22 @@
 #include "lfunctions.h"
 #include <stdio.h>
 
+
+FundamentalRef mkErr(std::string str, NodeRef n) {
+	std::string msg = std::format("Error via node type {} ({}) on line: {}, column: {}\n  {}", (int)n->t,n->toString(), n->line, n->column, str);
+	return std::make_shared<FundamentalError>(msg);
+}
+
+FundamentalRef wrapPotentialErr(FundamentalRef ft, NodeRef n) {
+	if(ft->t == FType::Error) {
+		auto e = std::dynamic_pointer_cast<FundamentalError>(ft);
+		return mkErr(e->s, n);
+	}
+	return ft;
+}
+
+
+
 static std::map<std::string, LFuncRef> calls{};
 
 class LFsprint : public LFunc {
@@ -378,7 +394,6 @@ public:
 };
 
 
-
 FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRef h) {
 
 	// The interpreter implements a few of the calls: imp, =
@@ -416,7 +431,7 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 						varNode->str = res->toString();
 						break;
 					default:
-						return std::make_shared<FundamentalError>(std::format("Unexpected type for variable name: {}", res->toString()));
+						return mkErr(std::format("Unexpected type for variable name: {}", res->toString()), varNode);
 					}
 				}
 
@@ -424,12 +439,12 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 				vd->isKnownName = varNode->isKnownName;
 
 				if (i + 1 == call->args.size()) {
-					return std::make_shared<FundamentalError>(std::format("SyntaxError declaring variable {} with no value", vd->toString() ));
+					return mkErr(std::format("SyntaxError declaring variable {} with no value", vd->toString() ), varNode);
 				}
 				i++;
 				res = descend(call->args[i], prev);
 				vd->v = res;
-				res = scopey.write(vd);
+				res = wrapPotentialErr( scopey.write(vd), call );
 
 			}
 			else {
@@ -453,16 +468,16 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 	// Rather than using an identifier name, look up the variable contained in the identifier
 	if(call->name == "deref") {
 		if(!call->args.size()) {
-			return std::make_shared<FundamentalError>("deref Expects exactly one argument");
+			return mkErr("deref Expects exactly one argument", call);
 		}
 		
 
 		if(call->args[0]->t != NodeType::Ident) {
-			return std::make_shared<FundamentalError>("deref Expects argument to be Identifier");
+			return mkErr("deref Expects argument to be Identifier", call);
 		}
 		auto varNamer =std::dynamic_pointer_cast<NodeIdent>(call->args[0]);
-		auto varName = scopey.read(varNamer->str);
-		return scopey.read(varName->toString());
+		auto varName = wrapPotentialErr( scopey.read(varNamer->str), varNamer );
+		return wrapPotentialErr( scopey.read(varName->toString()), varNamer );
 
 	}
 
@@ -473,7 +488,7 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 	*/
 	if (call->name == "?") {
 		if (call->args.size() == 0) {
-			return std::make_shared<FundamentalError>("? Expects at least one argument");
+			return mkErr("? Expects at least one argument", call);
 		}
 		
 		if (call->args.size() == 1) {
@@ -497,12 +512,12 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 			return descend(call->args[2], h, true);
 		}
 		
-		return std::make_shared<FundamentalError>(std::format("? {} is too many args!", call->args.size()));
+		return mkErr(std::format("? {} is too many args!", call->args.size()), call);
 	}
 
 
 	if(scopey.has(call->name)) {
-		return scopey.read(call->name);
+		return wrapPotentialErr( scopey.read(call->name), call );
 	}
 
 	LFuncRef fun = calls[call->name];
@@ -519,11 +534,8 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 		}
 		return fun->run(h, argVals);
 	}
-	else {
-		return std::make_shared<FundamentalError>(std::format("ERROR: Function not found '{}'", call->name));
-	}
-	std::println("No return?");
-	return std::make_shared<FundamentalEmpty>();
+
+	return mkErr(std::format("ERROR: Function not found '{}'", call->name), call);
 }
 
 FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenValid) {
@@ -532,7 +544,7 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 	case NodeType::Call: {
 		auto call = std::dynamic_pointer_cast<NodeCall>(n);
 		scopey.enterScope(call->name);
-		auto callRet = doCall(call, h);		
+		auto callRet = doCall(call, h);
 		scopey.exitScope();
 		return callRet;
 	}
@@ -544,7 +556,7 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 		if (loopTokenValid) {
 			return std::make_shared<FundamentalLoop>(h);
 		} else {
-			return std::make_shared<FundamentalError>("Unexpected @");
+			return mkErr("Unexpected @", n);
 		}
 	case NodeType::Ident:
 	{
@@ -556,11 +568,11 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 			return std::make_shared<FundamentalString>("\n");
 		}
 
-		return scopey.read(ident->str);
+		return wrapPotentialErr( scopey.read(ident->str), ident);
 	}
 	
 	case NodeType::Variable:
-		return std::make_shared<FundamentalError>(std::format("Unexpected attempt to declare variable outside imp."));
+		return mkErr("Unexpected attempt to declare variable outside imp.", n);
 		
 	case NodeType::Number:
 	{
@@ -575,7 +587,7 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 
 	}
 
-	return std::make_shared<FundamentalError>(std::format("Uninterpreted type {}", n->toString()));
+	return mkErr(std::format("Uninterpreted type {}", n->toString()), n);
 }
 
 Interpreter::Interpreter() {
