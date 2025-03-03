@@ -56,14 +56,14 @@ FundamentalRef ScopeCreep::read(const std::string& varName) {
     // Safely look up varName
     auto it = storage.find(varName);
     if (it == storage.end()) {
-        return std::make_shared<FundamentalError>(std::format("RuntimeError: read: Variable {} not found in {}.", varName, trace()));
+        return std::make_shared<FundamentalError>(std::format("RuntimeError: read: Variable '{}' not found in {}.", varName, trace()));
     }
     return it->second.read();
 }
 
 FundamentalRef ScopeCreep::writeToGlobal(const std::string& varName, FundamentalRef value) {
     if (scopeStack.empty()) {
-        return std::make_shared<FundamentalError>("InterpreterError: Attempted to global write variable {} in no scope");
+        return std::make_shared<FundamentalError>("InterpreterError: Attempted to global write variable '{}' in no scope");
     }
 
 

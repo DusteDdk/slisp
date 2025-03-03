@@ -1,27 +1,33 @@
+#include <iostream>
 #include <string>
 #include <memory>
 #include <sstream>
 #include <print>
 #include "token.h"
 #include "toker.h"
-#include "test.slisp.h"
 #include "parsey.h"
 #include "interpreter.h"
-
-// Tokens ->(ast Nodes) -> Expr
+#include "repl.h"
 #include <fstream>
 
 
 int main(int argc, char* argv[]) {
 
 	if (argc == 1) {
-		std::println("No arguments provided, using builtin example:\n");
-		std::istringstream debugStream(test_source);
-		Toker t(debugStream);
-		//Token tok;
-		Parsey p(t);
-		Interpreter i;
-		i.run(p.program);
+		std::println("No arguments provided, entering read,eval,print,loop.");
+		
+		if (!std::cin) {
+			std::println("Error: Could not open stdin.");
+			return 1;
+		}
+
+		std::println("A line with only the word exit will do just that.");
+
+		Repl r;
+
+		r.start();
+
+		
 	}
 	else {
 		std::ifstream ifs(argv[1], std::ifstream::in);
@@ -29,7 +35,8 @@ int main(int argc, char* argv[]) {
 		//Token tok;
 		Parsey p(t);
 		Interpreter i;
-		i.run(p.program);
+		NodeRef firstNode = p.parseNode( t.nextToken() );
+		i.run(firstNode);
 	}
 	return 0;
 }

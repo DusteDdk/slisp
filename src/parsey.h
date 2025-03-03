@@ -11,6 +11,7 @@
 
 enum class NodeType : int_fast8_t {
 	Call=1,
+	List,
 	String,
 	Number,
 	Base,
@@ -27,18 +28,12 @@ struct Node {
 	Node(NodeType type) : t(type) {};
 	virtual ~Node() = default;
 	virtual std::string toString();
-	int line;
-	int column;
+	int line=0;
+	int column=0;
 };
 
 using NodeRef = std::shared_ptr<Node>;
 
-struct NodeCall: public Node {
-	NodeCall() : Node(NodeType::Call), name("::invalid_fname::") {}
-	NodeCall(std::string fName) : Node(NodeType::Call), name(fName) {}
-	std::string name;
-	std::vector<std::shared_ptr<Node>> args;
-};
 
 
 struct NodeNum : public Node {
@@ -55,7 +50,21 @@ struct NodeStr : public Node {
 
 
 struct NodeIdent : public NodeStr {
-	NodeIdent(std::string str) : NodeStr(str) { t = NodeType::Ident; }
+	std::unique_ptr<NodeIdent> sub;
+	NodeIdent(std::string _str) : NodeStr(_str) {
+		t = NodeType::Ident;
+		if(_str.find(".") != std::string::npos) {
+			str = _str.substr(0, _str.find("."));
+			sub = std::make_unique<NodeIdent>(_str.substr(_str.find(".")+1));
+		}
+	}
+};
+struct NodeCall: public Node {
+	NodeCall() : Node(NodeType::Call), name("::invalid_fname::") {}
+	NodeCall(std::string fName) : Node(NodeType::Call), name(fName) {}
+	std::string name;
+	std::unique_ptr<NodeIdent> ident;
+	std::vector<std::shared_ptr<Node>> args;
 };
 
 struct NodeVariable: public NodeStr {
@@ -74,14 +83,13 @@ struct NodeErr : public NodeStr {
 
 
 class Parsey {
-	Toker toker;
-	NodeRef parseNode(Token t);
+	Toker& toker;
+	
 
 	NodeRef setNodeInfo(NodeRef n);
 public:
-
-	Parsey(Toker toker);
-	NodeRef program;
+	Parsey(Toker& toker);
+	NodeRef parseNode(Token t);
 };
 
 

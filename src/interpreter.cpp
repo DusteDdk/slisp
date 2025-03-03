@@ -6,7 +6,7 @@
 #include "interpreter.h"
 #include "lfunctions.h"
 #include <stdio.h>
-
+#include <SDL2/SDL.h>
 
 FundamentalRef mkErr(std::string str, NodeRef n) {
 	std::string msg = std::format("Error via node type {} ({}) on line: {}, column: {}\n  {}", (int)n->t,n->toString(), n->line, n->column, str);
@@ -54,6 +54,123 @@ public:
 };
 
 
+class LFlist : public LFunc {
+	public:
+	LFlist(std::string n) : LFunc(n) {}
+	FundamentalRef run(FundamentalRef head, std::vector<FundamentalRef> args) override {
+		FundamentalRef r = std::make_shared<FundamentalList>(args.size());
+		auto l = std::dynamic_pointer_cast<FundamentalList>(r);
+		for(FundamentalRef a : args) {
+			l->body.push_back(a);
+		}
+		return r;
+	};
+};
+
+class LFwindow : public LFunc {
+	private:
+		SDL_Window* win;
+		SDL_Renderer* ren;
+		int width, height;
+		std::string wname;
+		uint8_t red=0,green=0,blue=0;
+	public:
+	LFwindow(std::string n) : LFunc(n), win(0),ren(0), width(640), height(480), wname("Unnamed slisp window")  {}
+	FundamentalRef run(FundamentalRef head, std::vector<FundamentalRef> args) override {
+			if(!win) {
+				
+
+				if(args.size()>0) {
+					if(args[0]->t == FType::String) {
+						wname = std::dynamic_pointer_cast<FundamentalString>(args[0])->s;
+					}
+				}
+				if(args.size()>1) {
+					if(args[1]->t == FType::Number) {
+						width = std::dynamic_pointer_cast<FundamentalNumber>(args[1])->n;
+					}
+				}
+				if(args.size()>2) {
+					if(args[2]->t == FType::Number) {
+						height = std::dynamic_pointer_cast<FundamentalNumber>(args[2])->n;
+					}
+				}
+
+				SDL_Init(SDL_INIT_VIDEO);
+
+				win = SDL_CreateWindow(
+					wname.c_str(),
+					SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+					width, height,
+					SDL_WINDOW_SHOWN
+					);
+
+				if (win == NULL) {
+					return std::make_shared<FundamentalError>("Could not create window");
+				}
+
+
+				ren = SDL_CreateRenderer (win, -1,
+                                             SDL_RENDERER_ACCELERATED
+                                            /* | SDL_RENDERER_PRESENTVSYNC*/);
+
+
+			}
+
+
+			return std::make_shared<FundamentalTrue>(std::make_shared<FundamentalString>("window"));
+	};
+
+	FundamentalRef run(NodeIdent* ident, FundamentalRef head, std::vector<FundamentalRef> args) override {
+		if(ident->sub == nullptr) {
+			return run(head, args);
+		}
+
+			if(ident->sub->str == "color") {
+				if(args.size() == 3) {
+
+				  red=(uint8_t)std::dynamic_pointer_cast<FundamentalNumber>(args[0])->n;
+				  green=(uint8_t)std::dynamic_pointer_cast<FundamentalNumber>(args[1])->n;
+				  blue=(uint8_t)std::dynamic_pointer_cast<FundamentalNumber>(args[2])->n;
+
+				  SDL_SetRenderDrawColor(ren, red, green, blue, 255);
+				}
+			}
+
+			if(ident->sub->str == "fill") {
+				SDL_RenderFillRect(ren, NULL);
+			}
+
+			if(ident->sub->str == "dot") {
+				if(args.size() == 3) {
+					SDL_Rect r;
+					
+					r.x=(int)std::dynamic_pointer_cast<FundamentalNumber>(args[1])->n;
+					r.y=(int)std::dynamic_pointer_cast<FundamentalNumber>(args[2])->n;
+					r.w=(int)(std::dynamic_pointer_cast<FundamentalNumber>(args[0])->n/2);
+					r.h=r.w;
+				  SDL_RenderFillRect(ren, &r);
+
+				}
+			}
+
+			if(ident->sub->str == "flip") {
+				SDL_RenderPresent(ren);
+
+				SDL_Event event;
+    			SDL_PollEvent(&event);
+				if(event.type == SDL_QUIT) {
+					std::println("SDL: QUIT");
+					return std::make_shared<FundamentalFalse>(std::make_shared<FundamentalString>("QUIT"));
+				}
+
+			}
+
+
+
+		return std::make_shared<FundamentalTrue>(std::make_shared<FundamentalString>("window"));
+	}
+};
 
 class LFread: public LFunc {
 public:
@@ -79,6 +196,7 @@ public:
 FundamentalRef fStringTofNum(FundamentalRef a) {
 auto fstr = std::dynamic_pointer_cast<FundamentalString>(a);
 char* end{};
+errno=0;
 long double num = std::strtold(fstr->s.c_str(), &end);
 if (*end != 0 || errno != 0) {
 	return std::make_shared<FundamentalError>(std::format("Failed to parse string argument '{}' as number.", fstr->s));
@@ -163,7 +281,7 @@ public:
 				d = n->n;
 			}
 			else if (n->n == 0) {
-				return std::make_shared<FundamentalError>(std::format("{} Divide by 0 on pos {}", fname, pos));
+				return std::make_shared<FundamentalError>(std::format("Divide by 0 on pos {}", pos));
 			} else {
 				d /= n->n;
 			}
@@ -298,6 +416,33 @@ public:
 		return std::make_shared<FundamentalTrue>(v);
 	};
 };
+
+class LFor : public LFunc {
+public:
+	LFor(std::string n) : LFunc(n) {}
+	FundamentalRef run(FundamentalRef head, std::vector<FundamentalRef> args) override {
+
+		if (!args.size()) {
+			return std::make_shared<FundamentalError>(std::format("{} Expected at least one argument!", fname));
+		}
+		// When there's only one argument, we operate on head
+		if (args.size() == 1) {
+			args.insert(args.begin(), head);
+		}
+
+		FundamentalRef last;
+		for (FundamentalRef a : args) {
+			if (a->t != FType::False) {
+				return std::make_shared<FundamentalTrue>(a);
+			}
+			last = a;
+		}
+		return std::make_shared<FundamentalFalse>(last);
+		
+	}
+
+};
+
 
 class LFgt : public LFunc {
 public:
@@ -532,17 +677,20 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 			}
 			argVals.push_back(val);
 		}
-		return fun->run(h, argVals);
+		return fun->run(call->ident.get(), h, argVals);
 	}
 
 	return mkErr(std::format("ERROR: Function not found '{}'", call->name), call);
 }
 
-FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenValid) {
+FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenValid, bool noImpScopeChange) {
 	switch (n->t)
 	{
 	case NodeType::Call: {
 		auto call = std::dynamic_pointer_cast<NodeCall>(n);
+		if (noImpScopeChange) {
+			return doCall(call, h);
+		}
 		scopey.enterScope(call->name);
 		auto callRet = doCall(call, h);
 		scopey.exitScope();
@@ -583,7 +731,7 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 	case NodeType::Stop:
 	case NodeType::Error:
 	default:
-
+		break;
 
 	}
 
@@ -602,6 +750,9 @@ Interpreter::Interpreter() {
 	calls["!"] = std::make_shared<LFnegate>("!");
 	calls[">"] = std::make_shared<LFgt>(">");
 	calls["<"] = std::make_shared<LFlt>("<");
+	calls["|"] = std::make_shared<LFor>("|");
+	calls["list"] = std::make_shared<LFlist>("list");
+	calls["window"] = std::make_shared<LFwindow>("window");
 }
 
 void Interpreter::run(NodeRef program)

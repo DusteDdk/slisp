@@ -84,7 +84,6 @@ NodeRef Parsey::parseNode(Token t) {
 	}
 	case Token::String:
 		return setNodeInfo(mkNode<NodeStr>(toker.str));
-		break;
 	case Token::Loop:
 	{
 		Token t = toker.peek();
@@ -100,8 +99,8 @@ NodeRef Parsey::parseNode(Token t) {
 		if (t != Token::Identifier) {
 			return setNodeInfo(mkNode<NodeErr>(std::format("Syntax error: Expected Identifer, got {}", tokName(t))));
 		}
-
-		list->name = toker.str;
+		list->ident = std::make_unique<NodeIdent>(toker.str);
+		list->name = list->ident->str;
 
 		while (true) {
 			t = toker.nextToken();
@@ -110,6 +109,9 @@ NodeRef Parsey::parseNode(Token t) {
 				break;
 			}
 
+			if( t == Token::SyntaxError) {
+				return setNodeInfo(mkNode<NodeErr>(std::format("Error in call body: {}", toker.str)));
+			}
 			if (t == Token::Eof) {
 				return setNodeInfo(mkNode<NodeErr>("Syntax error, list not closed."));
 			}
@@ -133,6 +135,37 @@ NodeRef Parsey::parseNode(Token t) {
 				break;
 			}
 
+			if( t == Token::SyntaxError) {
+				return setNodeInfo(mkNode<NodeErr>(std::format("Error in ilist body: {}", toker.str)));
+			}
+
+			if (t == Token::Eof) {
+				return setNodeInfo(mkNode<NodeErr>("Syntax error, ilist not closed."));
+			}
+
+			NodeRef n = parseNode(t);
+			list->args.push_back(n);
+		}
+		return list;
+	}
+
+	case Token::LBegin:
+	{
+		auto list = std::make_shared<NodeCall>();
+
+		list->name = "list";
+
+		while (true) {
+			t = toker.nextToken();
+
+			if (t == Token::LEnd) {
+				break;
+			}
+
+			if( t == Token::SyntaxError) {
+				return setNodeInfo(mkNode<NodeErr>(std::format("Error in list body: {}", toker.str)));
+			}
+
 			if (t == Token::Eof) {
 				return setNodeInfo(mkNode<NodeErr>("Syntax error, ilist not closed."));
 			}
@@ -147,6 +180,8 @@ NodeRef Parsey::parseNode(Token t) {
 		return setNodeInfo(mkNode<NodeErr>("SyntaxError: Stray ')'"));
 	case Token::IEnd:
 		return setNodeInfo(mkNode<NodeErr>("SyntaxError: Stray '}'"));
+	case Token::LEnd:
+		return setNodeInfo(mkNode<NodeErr>("SyntaxError: Stray ']'"));
 		
 	case Token::Eof:
 		return setNodeInfo(mkNode<Node>(NodeType::Stop));
@@ -159,8 +194,4 @@ NodeRef Parsey::parseNode(Token t) {
 	return setNodeInfo(mkNode<NodeErr>(std::format("System Error: Unhandled {}", tokName(t))));
 }
 
-Parsey::Parsey(Toker toker) : toker(toker) {
-	Token t = toker.nextToken();
-	program = parseNode(t);
-
-};
+Parsey::Parsey(Toker& toker) : toker(toker) {};

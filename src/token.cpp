@@ -18,6 +18,10 @@ std::string tokName(Token t) {
 		return "Token::IBegin";
 	case Token::IEnd:
 		return "Token::IEnd";
+	case Token::LBegin:
+		return "Token::LBegin";
+	case Token::LEnd:
+		return "Token::LEnd";
 	case Token::Eof:
 		return "Token::Eof";
 	case Token::SyntaxError:

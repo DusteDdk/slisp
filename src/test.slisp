@@ -1,20 +1,89 @@
 {
-	0
-	{loop:$
+	{
 		var2:?
 		var2:
 		(? $
 			(imp
-				(print "var2 exists: " var2 nl)
-				var2:: (+ var2 1 ))
+				(+ var2 1 )
+				(print "incremented var2: " var2 nl))
 			(imp
-				(print "var2 does not exist, yet.." nl)
+				(print "var2 does not exist, setting it to 0" nl)
 			0))
 
-		(+ loop 1)
-		(? (< 1000 ) @)
+		(? (< 10 ) @)
 	}
 
+	0 {
+		(print "Very implicit loop " $ nl)
+		(+ 1)
+		(? (< 10) @)
+	}
+
+	numa: 1
+	numb: 2
+	res: 3
+
+	aList: [ numa numb res ]
+
+	(print "Divisions? " (/ 84 2) nl)
+	(print "'" -.23 "'" nl)
+
+
+/*
+	pos: [
+¤ {
+				doc: "Coordinate for a bouncing object, increments when read, direction changes when position exceeds max,
+						Arguments: (initial) value, direction (also the velocity), minpos & maxpos (when to change direction)"
+				create: {
+					v:   #value
+					dir: #direction
+					min: #minpos
+					max: #maxpos
+				}
+				read: {
+					(? (| (> max) (< min)) { dir:: (* dir (- 0 1) )})
+					v: (+ v 1)
+				}
+			}
+		]
+
+		bouncer2d: [
+			#{
+				create: {
+					x: (pos value: 10 dir: 1 min: 0 max: 799)
+					y: (pos 10 1 0 599) // example unnamed (positional) arguments
+				}
+			}
+		]
+
+		ball: (bouncer2d)
+
+		{
+			(window.dot 6 ball.x ball.y)
+			(? (window.flip) @)
+		}
+
+	(window "slisp test" 800 600)
+	(window.color 0 0 0)
+	(window.fill)
+	(window.color 255 128 0)
+
+	x: 0
+	y: 0
+	y:21.2
+	xd: 1.421812891
+	yd: (- 0 1.875231)
+	{
+		x: (+ x xd)
+		(? (| (>  x 799) (< x 1)) {xd::(* xd (- 0 1))})
+
+		y: (+ y yd)
+		(? (| (>  y 599) (< y 1)) { yd:: (* yd (- 0 1)) } )
+
+		(window.dot 6 x y)
+		(? (window.flip) @)
+	}
+*/
 	(print "Enter a number: ")
 	numa: (read)
 	(print nl "Enter another number: ")
@@ -27,16 +96,7 @@
 	// Does this throw you off?
 	// and this?
 	(print nl "Enter the variable name to read: ")
-        varName: (read) (print nl "The value of " varName " is "
-(
-deref
-varName 123
-
-
-
-)
-nl
-)
+        varName: (read) (print nl "The value of " varName " is " (deref varName) nl)
 
 
 	(+ 1 2)
@@ -105,8 +165,6 @@ nl
 		@) // Jump back to start of closest imp
 
 	)
-
-
-
-
+	(print "Bye bye..")
+	0
 }

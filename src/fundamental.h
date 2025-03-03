@@ -1,10 +1,12 @@
 #ifndef FUNDAMENTAL_H_INCLUDED
 #define FUNDAMENTAL_H_INCLUDED
 
+#include <vector>
 #include <memory>
 #include <string>
 
 enum class FType : int_fast8_t {
+	List=1,
 	Number,
 	String,
 	Empty,
@@ -31,6 +33,15 @@ public:
 	FundamentalEmpty() : Fundamental(FType::Empty) {}
 	std::string toString() override { return "::EMPTY::"; }
 };
+
+class FundamentalList : public Fundamental {
+public:
+	std::vector<FundamentalRef> body;
+	FundamentalList() : Fundamental(FType::List) {}
+	FundamentalList(size_t iSize) : Fundamental(FType::List) { body.reserve(iSize); }
+	std::string toString() override;
+};
+
 
 class FundamentalTrue : public Fundamental {
 public:

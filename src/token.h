@@ -10,6 +10,8 @@ enum class Token : int_fast8_t {
 	String,
 	IBegin,
 	IEnd,
+	LBegin,
+	LEnd,
 	Begin,
 	End,
 	Eof,

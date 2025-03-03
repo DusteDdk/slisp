@@ -46,6 +46,23 @@
         "bitset": "cpp",
         "__locale": "cpp",
         "__string": "cpp",
-        "format": "cpp"
+        "format": "cpp",
+        "charconv": "cpp",
+        "ranges": "cpp",
+        "span": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "__tree": "cpp",
+        "deque": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "__bit_reference": "cpp",
+        "text_encoding": "cpp",
+        "__functional_base": "cpp",
+        "locale": "cpp",
+        "future": "cpp",
+        "complex": "cpp"
     }
 }
