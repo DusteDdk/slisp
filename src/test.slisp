@@ -16,7 +16,7 @@
 	0 {
 		(print "Very implicit loop " $ nl)
 		(+ 1)
-		(? (< 10) @)
+		(? (< 10) @) // Comment
 	}
 
 	numa: 1

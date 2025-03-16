@@ -30,3 +30,4 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 	inter
 )
 
+add_subdirectory(tests)

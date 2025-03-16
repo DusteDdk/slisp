@@ -39,10 +39,10 @@ protected:
         if (gptr() < egptr())
             return traits_type::to_int_type(*gptr());
 
-        // We need more data—ask the user-supplied function.
-        buffer_ = callback_();   // e.g. read from a queue, pipe, etc.
+        // We need more date, ask the user-supplied function, if it returns empty, we provide EOF.
+        buffer_ = callback_();
         if (buffer_.empty()) {
-            // No more data? That’s effectively EOF.
+            // No more data? That is effectively EOF.
             return traits_type::eof();
         }
 
@@ -69,10 +69,13 @@ std::string lineProducer()
                 std::println("Bye bye!");
                 return "";
             }
+
             std::cin.clear();
+        } else {
+            return "";
         }
     }
-    
+
     return line.length() ? std::format("{}\n", line): "\n";
 }
 
@@ -92,10 +95,17 @@ void Repl::start() {
 
 	while( true ) {
 		nextToken = toker.nextToken();
+
+        if(nextToken == Token::Eof) {
+            std::println("\nToken::Eof: Input closed.");
+            break;
+        }
+
 		nextNode = parsey.parseNode(nextToken);
         if (nextNode->t == NodeType::Stop) {
             break;
         }
+
         if (nextNode->t == NodeType::Error) {
             std::println("{}", nextNode->toString());
             continue;
