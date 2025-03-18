@@ -56,33 +56,18 @@ FundamentalRef ScopeCreep::read(const std::string& varName) {
     // Safely look up varName
     auto it = storage.find(varName);
     if (it == storage.end()) {
-        return std::make_shared<FundamentalError>(std::format("RuntimeError: read: Variable '{}' not found in {}.", varName, trace()));
+        return std::make_shared<FundamentalError>(std::format("Cannot read variable '{}': Not in scope {}", varName, trace()));
     }
     return it->second.read();
 }
 
-FundamentalRef ScopeCreep::writeToGlobal(const std::string& varName, FundamentalRef value) {
-    if (scopeStack.empty()) {
-        return std::make_shared<FundamentalError>("InterpreterError: Attempted to global write variable '{}' in no scope");
-    }
-
-
-    auto it = storage.find(varName);
-    if (it != storage.end()) {
-        storage.erase(varName);
-    }
-
-    auto result = storage.emplace(varName, ScopeItem(varName, &storage));
-    ScopeItem& newItem = result.first->second;
-    newItem.push(value);
-    
-    return value;
-}
 
 FundamentalRef ScopeCreep::write(std::shared_ptr<FundamentalVariableDefinition> vd) {
 
+
+
     if (scopeStack.empty()) {
-        return std::make_shared<FundamentalError>("InterpreterError: Attempted to write variable {} in no scope");
+        return std::make_shared<FundamentalError>(std::format("Cannot write variable '{}': No scope.", vd->s));
     }
 
     FundamentalRef value = vd->v;
@@ -123,8 +108,7 @@ FundamentalRef ScopeCreep::writeToScope(const std::string& varName, FundamentalR
         // It's in an outer scope - shadow it by pushing a new value
         itemPtr->push(value);
         // Record that we introduced/shadowed this variable in the current scope
-        currentScope.push_back(itemPtr);      
-   
+        currentScope.push_back(itemPtr);
     } else {
         // The variable doesn't exist at all, so create it
         auto result = storage.emplace(varName, ScopeItem(varName, &storage));
@@ -142,7 +126,7 @@ FundamentalRef ScopeCreep::writeToKnown(const std::string& varName, FundamentalR
     auto it = storage.find(varName);
     if (it == storage.end()) {
         // The variable does not exist in any scope
-        return std::make_shared<FundamentalError>(std::format("RuntimeError: write-known: variable {} not found in {}", varName, trace()));
+        return std::make_shared<FundamentalError>(std::format("Cannot write known-variable '{}': not in scope {}", varName, trace()));
     }
 
     it->second.set(value);
@@ -161,7 +145,7 @@ void ScopeCreep::enterScope(std::string n) {
 
 void ScopeCreep::exitScope() {
     if (scopeStack.empty()) {
-        std::println("ScopeScree::exitScope: Error: Tried to exit beyond last scope.");
+        std::println("Runtime error: Tried to exitScope beyond last scope.");
         return;
     }
 

@@ -17,6 +17,7 @@ enum class Token : int_fast8_t {
 	Eof,
 	SyntaxError,
 	Name,
+	NoOP,
 };
 
 std::string tokName(Token t);

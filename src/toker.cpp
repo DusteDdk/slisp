@@ -4,7 +4,7 @@
 
 using namespace std;
 
-Toker::Toker(std::istream& inStream) : in(inStream), acc(""), peekToken(Token::Eof) {
+Toker::Toker(std::istream& inStream) : in(inStream), acc("") {
 	c = 0;
 	line = 1;
 	rline = 1;
@@ -26,7 +26,9 @@ bool Toker::getC() {
 			rcolumn = 1;
 		}
 		if (c != '\n' && c != '\r') {
-			rcolumn++;
+			if(c != END_OF_TEXT) {
+				rcolumn++;
+			}
 		}
 	}
 
@@ -87,35 +89,20 @@ Token Toker::flush(Token t) {
 		acc = "";
 		return Token::Identifier;
 	}
-	else {
-		line = rline;
-		column = rcolumn;
-	}
+	
+	line = rline;
+	column = rcolumn;
+
+	str="";
+	acc="";
+
 	return t;
 }
 
-// Warning: Peek overwrites str, so if you need to keep the current str, you MUST do it before calling.
-Token Toker::peek() {
-	if (!peeked) {
-		peekToken = nextToken();
-		peeked = true;
-	}
-	
-	return peekToken;
-}
-
-
-
 Token Toker::nextToken() {
 
-	// We might need one extra call in case there was something in acc before eof
 	if (in.eof()) {
 		return Token::Eof;
-	}
-
-	if (peeked) {
-		peeked = false;
-		return peekToken;
 	}
 
 	while (getC()) {
@@ -127,6 +114,9 @@ Token Toker::nextToken() {
 			continue;
 		}
 		switch (c) {
+
+		case END_OF_TEXT:
+			return flush(Token::NoOP);
 		case ':':
 			return flush(Token::Name);
 		case '@':
@@ -188,6 +178,8 @@ Token Toker::nextToken() {
 				return flush(Token::Identifier);
 			}
 			str= "";
+			line = rline;
+			column = rcolumn;
 			while (getC()) {
 				if (c == '"') {
 					if (str.length() && str.back() == '\\') {
@@ -253,3 +245,39 @@ Token Toker::nextToken() {
 	return flush(Token::Eof);
 }
 
+std::string TokInfoStr(TokenInfo& t) {
+	if(t.str.length()) {
+		return std::format("{}<{}> @ {}:{}:{}",tokName(t.token), t.str, t.file, t.line, t.column);
+	}
+	return std::format("{} @ {}:{}:{}",tokName(t.token), t.file, t.line, t.column);
+}
+
+
+TokenProvider::TokenProvider(std::istream &inStream, std::string fname): toker(inStream), fileName(fname) {
+	curToken.token=Token::NoOP;
+	nxtToken.token=Token::NoOP;
+}
+
+
+TokenInfo TokenProvider::readNextToken() {
+	TokenInfo ti;
+	ti.token = toker.nextToken();
+	ti.line = toker.line;
+	ti.column = toker.column;
+	ti.str = toker.str;
+	ti.file = fileName;
+	return ti;
+}
+
+
+bool TokenProvider::advance()
+{
+	if(curToken.token == Token::Eof) {
+		return false;
+	}
+
+	curToken = nxtToken;
+	nxtToken = readNextToken();
+
+    return true;
+}

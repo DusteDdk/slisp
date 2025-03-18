@@ -8,15 +8,14 @@
 
 class Interpreter {
 private:
-	FundamentalRef doCall(std::shared_ptr<NodeCall> call, FundamentalRef h);
 	std::vector<std::shared_ptr<FundamentalVariableDefinition>> varsWaitingForValue;
-	FundamentalRef descendReturnValue(FundamentalRef v);
 
 public:
 	Interpreter();
+	FundamentalRef doCall(std::shared_ptr<NodeCall> call, FundamentalRef h);
 	ScopeCreep scopey;
 	void run(NodeRef program);
-	FundamentalRef descend(NodeRef n, FundamentalRef h, bool loopTokenValid = false, bool noImpScopeChange=false);
+	FundamentalRef descend(NodeRef n, FundamentalRef h, bool loopTokenValid = false);
 };
 
 #endif

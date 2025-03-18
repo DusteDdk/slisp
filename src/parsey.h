@@ -10,12 +10,11 @@
 #include "toker.h"
 
 enum class NodeType : int_fast8_t {
+	Base=0,
 	Call=1,
 	List,
 	String,
 	Number,
-	Base,
-	Stop,
 	Ident,
 	Error,
 	Loop,
@@ -28,8 +27,7 @@ struct Node {
 	Node(NodeType type) : t(type) {};
 	virtual ~Node() = default;
 	virtual std::string toString();
-	int line=0;
-	int column=0;
+	TokenInfo origin;
 };
 
 using NodeRef = std::shared_ptr<Node>;
@@ -83,13 +81,10 @@ struct NodeErr : public NodeStr {
 
 
 class Parsey {
-	Toker& toker;
-	
-
-	NodeRef setNodeInfo(NodeRef n);
+	TokenProvider &top;
 public:
-	Parsey(Toker& toker);
-	NodeRef parseNode(Token t);
+	Parsey(TokenProvider& top);
+	NodeRef parse(TokenInfo& t);
 };
 
 

@@ -28,6 +28,8 @@ std::string tokName(Token t) {
 		return "Token::SyntaxError";
 	case Token::Name:
 		return "Token::Name";
+	case Token::NoOP:
+		return "Token::NoOP";
 	}
 	return  "Unknown::Token";
 }

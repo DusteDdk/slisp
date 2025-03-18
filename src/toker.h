@@ -1,7 +1,10 @@
 #ifndef TOKER_H_INCLUDED
 #define TOKER_H_INCLUDED
+#include <format>
 #include <istream>
 #include "token.h"
+
+#define END_OF_TEXT (char)3
 
 class Toker {
 	int serial = 0;
@@ -12,10 +15,7 @@ class Toker {
 	bool isUnic=false;
 	bool getC();
 	Token flush(Token t);
-	bool peeked = false;
 	std::string acc;
-	Token peekToken;
-	std::string peekStrBackup;
 	int rline, rcolumn;
 
 	public:
@@ -27,7 +27,28 @@ class Toker {
 
 
 	Token nextToken();
-	Token peek();
+};
+
+struct TokenInfo {
+	Token token;
+	std::string str;
+	std::string file;
+	int line, column;
+};
+
+std::string TokInfoStr(TokenInfo& t);
+
+class TokenProvider {
+	private:
+	Toker toker;
+	std::string fileName;
+	TokenInfo readNextToken();
+	public:
+		TokenProvider(std::istream& inStream, std::string fname);
+		bool advance();
+		TokenInfo curToken;
+		TokenInfo nxtToken;
+
 };
 
 #endif

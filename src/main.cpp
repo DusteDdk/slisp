@@ -14,28 +14,27 @@
 int main(int argc, char* argv[]) {
 
 	if (argc == 1) {
-		std::println("No arguments provided, entering read,eval,print,loop.");
-		
+
 		if (!std::cin) {
 			std::println("Error: Could not open stdin.");
 			return 1;
 		}
 
-		std::println("A line with only the word exit will do just that.");
-
 		Repl r;
+		r.enter();
 
-		r.start();
-
-		
 	}
 	else {
 		std::ifstream ifs(argv[1], std::ifstream::in);
-		Toker t(ifs);
-		//Token tok;
-		Parsey p(t);
+		TokenProvider top(ifs, argv[1]);
+		Parsey p(top);
+
 		Interpreter i;
-		NodeRef firstNode = p.parseNode( t.nextToken() );
+		if(! top.advance() ) {
+			std::println("Error in input file.");
+			return 1;
+		}
+		NodeRef firstNode = p.parse( top.curToken );
 		i.run(firstNode);
 	}
 	return 0;

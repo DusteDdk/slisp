@@ -33,7 +33,6 @@ class ScopeCreep {
     std::vector<std::string> stackTrace;
 
 
-    FundamentalRef writeToGlobal(const std::string& varName, FundamentalRef value);
     FundamentalRef writeToKnown(const std::string& varName, FundamentalRef value);
     FundamentalRef writeToScope(const std::string& varName, FundamentalRef value);
 

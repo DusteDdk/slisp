@@ -9,7 +9,7 @@
 #include <SDL2/SDL.h>
 
 FundamentalRef mkErr(std::string str, NodeRef n) {
-	std::string msg = std::format("Error via node type {} ({}) on line: {}, column: {}\n  {}", (int)n->t,n->toString(), n->line, n->column, str);
+	std::string msg = std::format("{}: Interpretation error: {}", TokInfoStr(n->origin), str);
 	return std::make_shared<FundamentalError>(msg);
 }
 
@@ -683,14 +683,11 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 	return mkErr(std::format("ERROR: Function not found '{}'", call->name), call);
 }
 
-FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenValid, bool noImpScopeChange) {
+FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenValid) {
 	switch (n->t)
 	{
 	case NodeType::Call: {
 		auto call = std::dynamic_pointer_cast<NodeCall>(n);
-		if (noImpScopeChange) {
-			return doCall(call, h);
-		}
 		scopey.enterScope(call->name);
 		auto callRet = doCall(call, h);
 		scopey.exitScope();
@@ -718,18 +715,19 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 
 		return wrapPotentialErr( scopey.read(ident->str), ident);
 	}
-	
 	case NodeType::Variable:
 		return mkErr("Unexpected attempt to declare variable outside imp.", n);
-		
 	case NodeType::Number:
 	{
 		auto num = std::dynamic_pointer_cast<NodeNum>(n);
 		return std::make_shared<FundamentalNumber>(num->num);
 	}
-	case NodeType::Base:
-	case NodeType::Stop:
 	case NodeType::Error:
+	{
+		auto err = std::dynamic_pointer_cast<NodeErr>(n);
+		return std::make_shared<FundamentalError>(err->toString());
+	}
+	case NodeType::Base:
 	default:
 		break;
 
@@ -759,5 +757,5 @@ void Interpreter::run(NodeRef program)
 {
 	FundamentalRef head = std::make_shared<FundamentalEmpty>();
 	FundamentalRef r = descend(program, head);
-	std::println("\nInterpreter::run: Program Exit.\n\n{}", r->toString());
+	std::println("");
 }
