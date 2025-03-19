@@ -15,12 +15,12 @@ class ScopeItem;
 using ScopeStore = std::unordered_map<std::string, ScopeItem>;
 
 class ScopeItem {
-    std::stack<FundamentalRef> stack;
-    std::string name;
     ScopeStore *owner;
 
 public:
     ScopeItem(std::string n, ScopeStore* o);
+    std::stack<FundamentalRef> stack;
+    std::string name;
     void pop();
     void push(FundamentalRef value);
     void set(FundamentalRef value);
@@ -39,6 +39,7 @@ class ScopeCreep {
 public:
     ScopeCreep() = default;
     std::string trace();
+    std::string dump();
     FundamentalRef read(const std::string& varName);
     FundamentalRef write(std::shared_ptr<FundamentalVariableDefinition> vd);
     bool has(std::string& varName);

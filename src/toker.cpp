@@ -89,7 +89,7 @@ Token Toker::flush(Token t) {
 		acc = "";
 		return Token::Identifier;
 	}
-	
+
 	line = rline;
 	column = rcolumn;
 
@@ -254,10 +254,22 @@ std::string TokInfoStr(TokenInfo& t) {
 
 
 TokenProvider::TokenProvider(std::istream &inStream, std::string fname): toker(inStream), fileName(fname) {
-	curToken.token=Token::NoOP;
-	nxtToken.token=Token::NoOP;
+	reset(fileName);
 }
 
+void TokenProvider::reset(std::string fname) {
+	fileName=fname;
+	curToken.column=0;
+	curToken.line=0;
+	curToken.file=fileName;
+	curToken.str="";
+	curToken.token=Token::NoOP;
+	nxtToken.column=0;
+	nxtToken.line=0;
+	nxtToken.file=fileName;
+	nxtToken.str="";
+	nxtToken.token=Token::NoOP;
+}
 
 TokenInfo TokenProvider::readNextToken() {
 	TokenInfo ti;
@@ -268,6 +280,7 @@ TokenInfo TokenProvider::readNextToken() {
 	ti.file = fileName;
 	return ti;
 }
+
 
 
 bool TokenProvider::advance()

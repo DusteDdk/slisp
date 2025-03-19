@@ -6,7 +6,7 @@
 #include <print>
 #include "scopey.h"
 
-ScopeItem::ScopeItem(std::string n, ScopeStore* o) : name(std::move(n)), owner(o) {}
+ScopeItem::ScopeItem(std::string n, ScopeStore* o) : owner(o), name(std::move(n)) {}
 
 void ScopeItem::pop() {
     // Remove top element
@@ -61,10 +61,20 @@ FundamentalRef ScopeCreep::read(const std::string& varName) {
     return it->second.read();
 }
 
+std::string ScopeCreep::dump()
+{
+    std::string ret="";
+    for (auto const& x : storage)
+    {
+        int stackIdx = x.second.stack.size() - 1;
+        std::string stack = std::format( "[{}]{}", stackIdx, stackTrace.at(stackIdx));
+        ret += std::format("{} / {}: {}\n", x.first, stack, x.second.stack.top()->toString() );
+
+    }
+    return ret;
+}
 
 FundamentalRef ScopeCreep::write(std::shared_ptr<FundamentalVariableDefinition> vd) {
-
-
 
     if (scopeStack.empty()) {
         return std::make_shared<FundamentalError>(std::format("Cannot write variable '{}': No scope.", vd->s));

@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/UnitTests",
-            "args": ["-s"],
+            "args": [""],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

@@ -1,3 +1,5 @@
+#include <format>
+
 #include "token.h"
 
 std::string tokName(Token t) {
@@ -31,5 +33,6 @@ std::string tokName(Token t) {
 	case Token::NoOP:
 		return "Token::NoOP";
 	}
-	return  "Unknown::Token";
+
+	return  std::format("Unknown::Token({:X})", (int)t);
 }

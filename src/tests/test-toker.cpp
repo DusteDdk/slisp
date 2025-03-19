@@ -49,7 +49,7 @@ someThing:: -.12 // Specific name, Number
 
 }
 
-
+/*
 TEST_CASE( "TokenProvider" ) {
 
     istringstream strb(R"TOKER_TEST_STR({   // iList begin, this comment ignored.
@@ -63,4 +63,4 @@ someThing:: -.12 // Specific name, Number)TOKER_TEST_STR");
     while( tokpro.advance() ) {
         println("{}", TokInfoStr(tokpro.curToken));
     }
-}
+}*/

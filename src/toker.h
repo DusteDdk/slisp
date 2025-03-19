@@ -46,9 +46,9 @@ class TokenProvider {
 	public:
 		TokenProvider(std::istream& inStream, std::string fname);
 		bool advance();
+		void reset(std::string fname);
 		TokenInfo curToken;
 		TokenInfo nxtToken;
-
 };
 
 #endif

@@ -8,11 +8,14 @@ find_package(Catch2 3 REQUIRED)
 # These tests can use the Catch2-provided main
 add_executable(${TEST_TARGET_NAME}
     test-toker.cpp
+    test-engine.cpp
 )
 
-target_link_libraries(${TEST_TARGET_NAME} PRIVATE toker)
-
-target_link_libraries(${TEST_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(${TEST_TARGET_NAME} PRIVATE
+    toker
+    engine
+    Catch2::Catch2WithMain
+)
 
 set(UNIT_TEST ${TEST_TARGET_NAME})
 add_test(NAME ${UNIT_TEST} COMMAND ${UNIT_TEST})
