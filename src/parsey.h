@@ -4,8 +4,9 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <format> 
+#include <format>
 #include <utility>
+#include <print>
 
 #include "toker.h"
 
@@ -28,6 +29,8 @@ struct Node {
 	virtual ~Node() = default;
 	virtual std::string toString();
 	TokenInfo origin;
+	//std::shared_ptr<Node> prevNode;
+	//std::shared_ptr<Node> nextNode;
 };
 
 using NodeRef = std::shared_ptr<Node>;
@@ -47,16 +50,11 @@ struct NodeStr : public Node {
 };
 
 
-struct NodeIdent : public NodeStr {
-	std::unique_ptr<NodeIdent> sub;
-	NodeIdent(std::string _str) : NodeStr(_str) {
-		t = NodeType::Ident;
-		if(_str.find(".") != std::string::npos) {
-			str = _str.substr(0, _str.find("."));
-			sub = std::make_unique<NodeIdent>(_str.substr(_str.find(".")+1));
-		}
-	}
+struct NodeIdent : public Node {
+	NodeIdent(std::string _str) : Node(NodeType::Ident), str(_str) {}
+	std::string str;
 };
+
 struct NodeCall: public Node {
 	NodeCall() : Node(NodeType::Call), name("::invalid_fname::") {}
 	NodeCall(std::string fName) : Node(NodeType::Call), name(fName) {}
@@ -65,13 +63,14 @@ struct NodeCall: public Node {
 	std::vector<std::shared_ptr<Node>> args;
 };
 
-struct NodeVariable: public NodeStr {
+struct NodeVariable: public Node {
 	bool isQuery = false;
-	bool needsName = false;
 	bool isKnownName = false;
-	NodeVariable(std::string str) : NodeStr(str) { t = NodeType::Variable; }
-	NodeVariable() : NodeStr("::unnamed_var::") { t = NodeType::Variable; needsName = true;  }
-	std::string toString() { return std::format("::variable({})::", str); }
+	bool nameFromHead = false;
+	NodeVariable() : Node(NodeType::Variable) {}
+	std::string name;
+	std::string toString() { return std::format("::Create Variable{}>::", name); };
+	NodeRef valProvider;
 };
 
 struct NodeErr : public NodeStr {
@@ -82,9 +81,12 @@ struct NodeErr : public NodeStr {
 
 class Parsey {
 	TokenProvider &top;
+	//NodeRef prevNode;
+	NodeRef setNodeInfo(TokenInfo& ti, NodeRef node);
+	NodeRef mkVar(TokenInfo&ti, int level);
 public:
 	Parsey(TokenProvider& top);
-	NodeRef parse(TokenInfo& t);
+	NodeRef parse(TokenInfo& t, int level=0);
 };
 
 

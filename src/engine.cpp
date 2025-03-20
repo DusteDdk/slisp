@@ -36,6 +36,7 @@ void SlispEngine::setStdInEnabled(bool useStdIn)
 // Eval returns false if evaluation didn't yield a value.
 bool SlispEngine::eval(std::string prg)
 {
+
     top.reset(fileName);
     input.reset();
     input.addLine(prg);

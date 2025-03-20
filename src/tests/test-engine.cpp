@@ -40,7 +40,6 @@ TEST_CASE( "Engine" ) {
 TEST_CASE( "Engine fails unfinished input" ) {
         SlispEngine e;
         e.setFileName("evaltest.slisp");
-
         REQUIRE( !e.eval("(+ 1 2") );
         REQUIRE( e.eval("(+ 1 2) ") );
         REQUIRE( e.head->t == FType::Number );

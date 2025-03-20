@@ -35,7 +35,14 @@ int OnDemandStreamBuf::underflow() {
         }
     } else if(useStdIn && std::cin) {
 
-        std::print("~ ");
+        if( isMidToken != nullptr) {
+            if(*isMidToken) {
+                std::print("---+ ");
+            } else {
+                std::print("~ ");
+            }
+        }
+
         std::string line("");
         if(std::getline(std::cin, line)) {
             if( line != "exit" ) {
@@ -61,6 +68,11 @@ int OnDemandStreamBuf::underflow() {
 
 OnDemandIStream::OnDemandIStream(): buf(false) {
     rdbuf(&buf);
+}
+
+void OnDemandIStream::setMidTokenIndicator(bool *isMidToken)
+{
+    buf.isMidToken=isMidToken;
 }
 
 void OnDemandIStream::setStdInEnabled(bool useStdIn)

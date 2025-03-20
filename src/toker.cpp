@@ -15,10 +15,9 @@ Toker::Toker(std::istream& inStream) : in(inStream), acc("") {
 bool Toker::getC() {
 
 	if (replay) {
-		replay = false;
+		replay=false;
 		return true;
 	}
-	serial++;
 
 	if (!in.eof()) {
 		if (c == '\n') {
@@ -78,16 +77,20 @@ bool Toker::getC() {
 }
 
 
+Token Toker::emitStrTok(Token t) {
+	str = acc;
+	acc = "";
+	return t;
+}
+
 // Identifiers are special tokens, they're "everything that's not whitespace or consumed into other tokens"
 // So we emit them whenever we've accumulated something that fits that category, until whitespace or something else to consume.
 // Meaning we have to "push" them out at weird places, we do that by holding back the current character, emit the identifier, and then
 // next time, we're ready for a new token.
 Token Toker::flush(Token t) {
 	if (acc.length()) {
-		replay = true;
-		str = acc;
-		acc = "";
-		return Token::Identifier;
+		replay=true;
+		return emitStrTok(Token::Identifier);
 	}
 
 	line = rline;
@@ -95,7 +98,6 @@ Token Toker::flush(Token t) {
 
 	str="";
 	acc="";
-
 	return t;
 }
 
@@ -105,11 +107,12 @@ Token Toker::nextToken() {
 		return Token::Eof;
 	}
 
+	isMidToken = false;
 	while (getC()) {
 
 		if (isspace(c)) {
 			if (acc.length()) {
-				return flush(Token::Identifier);
+				return emitStrTok(Token::Identifier);
 			}
 			continue;
 		}
@@ -118,7 +121,24 @@ Token Toker::nextToken() {
 		case END_OF_TEXT:
 			return flush(Token::NoOP);
 		case ':':
-			return flush(Token::Name);
+		{
+			if(!getC()) {
+				str = "SyntaxError: Unexpected end of file after ':'";
+				return Token::SyntaxError;
+			}
+			// These are set for identifiers, but many others won't set it, calculating it is luckily easy
+			line = rline;
+			column = ( rcolumn - 1 - acc.length() ); // Works for both when there is is something accumulated and when there is not.
+			switch(c) {
+				case ':':
+					return emitStrTok(Token::KnownName); // Don't replay
+				case '?':
+					return emitStrTok(Token::NameQuery);
+				default:
+					replay=true;
+					return emitStrTok(Token::Name); // replay
+			}
+		}
 		case '@':
 			return flush(Token::Loop);
 
@@ -130,6 +150,7 @@ Token Toker::nextToken() {
 				if(c=='*') {
 					int blockDepth=1; // Not being able to next block comments always annoyed me.
 					acc="  ";
+					isMidToken=true;
 					while(blockDepth && getC() ) {
 						acc[0]=acc[1];
 						acc[1]=c;
@@ -140,6 +161,7 @@ Token Toker::nextToken() {
 						}
 					}
 
+					isMidToken=false;
 					if(in.eof() && blockDepth) {
 						str = std::format("SyntaxError: Unterminated block comment (depth: {}) started at line:{} colum:{}", blockDepth, line, column);
 						return Token::SyntaxError;
@@ -147,12 +169,14 @@ Token Toker::nextToken() {
 					acc="";
 					continue; // Comment ended, continue outer loop without token emission
 				} else if(c=='/') {
+					isMidToken=true;
 					while( getC() ) {
 						if(c=='\n') {
 							break;
 						}
 					}
 					acc="";
+					isMidToken=false;
 					continue; // Comment ended, continue outer loop without token emission
 				}
 			}
@@ -177,6 +201,7 @@ Token Toker::nextToken() {
 			if (acc.length()) {
 				return flush(Token::Identifier);
 			}
+			isMidToken=true;
 			str= "";
 			line = rline;
 			column = rcolumn;
@@ -186,17 +211,18 @@ Token Toker::nextToken() {
 						str.pop_back();
 					}
 					else {
+						isMidToken=false;
 						return Token::String;
 					}
 				}
 				str += c;
 			}
 			str = std::format("SyntaxError: Unterminated string: {}{}", str.substr(0,10), (str.length()>10)?"...":".");
+			isMidToken=false;
 			return Token::SyntaxError;
 		}
 
-
-
+		// Capture start of identifier
 		if (!acc.length()) {
 			line = rline;
 			column = rcolumn;
@@ -215,6 +241,7 @@ Token Toker::nextToken() {
 				if (c == '.') {
 					if (hasDot) {
 						str = std::format("SyntaxError: Multiple dots in number '{}'", str);
+
 						return Token::SyntaxError;
 					}
 					hasDot = true;
@@ -233,9 +260,7 @@ Token Toker::nextToken() {
 				continue; // Replay is set, this time we no longer match the "-" condition.
 			}
 
-			str=acc;
-			acc="";
-			return Token::Number;
+			return emitStrTok(Token::Number);
 		}
 
 		// If nothing else matched, then we add the character to the accumulating string, it is destined as an identifier if not recognized as a comment or something else.
@@ -247,13 +272,13 @@ Token Toker::nextToken() {
 
 std::string TokInfoStr(TokenInfo& t) {
 	if(t.str.length()) {
-		return std::format("{}<{}> @ {}:{}:{}",tokName(t.token), t.str, t.file, t.line, t.column);
+		return std::format("{}<{}> @ {}:{}:{}",tokName(t.token), t.str.substr(0,4), t.file, t.line, t.column);
 	}
 	return std::format("{} @ {}:{}:{}",tokName(t.token), t.file, t.line, t.column);
 }
 
 
-TokenProvider::TokenProvider(std::istream &inStream, std::string fname): toker(inStream), fileName(fname) {
+TokenProvider::TokenProvider(std::istream &inStream, std::string fname): toker(inStream), fileName(fname), isMidToken( &toker.isMidToken) {
 	reset(fileName);
 }
 

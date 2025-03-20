@@ -26,41 +26,27 @@ using namespace std;
         Check nested block comments
  */
 
+istringstream tokerTestStream(R"TOKER_TEST_STR({
+    directlyNamedVar: "testString"
+    : 123 // Indirectly named var (should be named testString)
+    directlyNamedKnownVar:: 123
+    directlyNamedQuery:?
+    :? // Ask if a variable named 123 exists
+    (print (+ 1 (+ 2 3)))
+    aList: [1 2 3 4 5]
+    1
+    -1
+    -.1
+    0.1
+    -0.1
+    (print "An \"escaped\" string")
+    @
+})TOKER_TEST_STR");
 
-TEST_CASE( "Toker" ) {
-    istringstream str(R"TOKER_TEST_STR({   // iList begin, this comment ignored.
-someThing // Identifier
-: // Name
-12 // Number
-(print "hello world")
-someThing:: -.12 // Specific name, Number
-
-)TOKER_TEST_STR");
-    Toker toker(str);
-    Token curToken;
-
-    while( (curToken = toker.nextToken()) != Token::Eof) {
-        //tstr = toker.str;
-
-        REQUIRE( (int)curToken > 0 );
-
-     //   println("Line:{} Column: {} {} (next:  {}) Str:{}", toker.line, toker.column, tokName(curToken), tokName(nextToken), tstr);
-    }
-
-}
-
-/*
 TEST_CASE( "TokenProvider" ) {
 
-    istringstream strb(R"TOKER_TEST_STR({   // iList begin, this comment ignored.
-someThing // Identifier
-: // Name
-12 // Number
-(print "hello world")
-someThing:: -.12 // Specific name, Number)TOKER_TEST_STR");
-
-    TokenProvider tokpro(strb, "test.slisp");
+    TokenProvider tokpro(tokerTestStream, "test.slisp");
     while( tokpro.advance() ) {
         println("{}", TokInfoStr(tokpro.curToken));
     }
-}*/
+}

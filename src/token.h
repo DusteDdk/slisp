@@ -17,6 +17,8 @@ enum class Token : int_fast8_t {
 	Eof,
 	SyntaxError,
 	Name,
+	KnownName,
+	NameQuery,
 	NoOP,
 };
 

@@ -36,6 +36,7 @@ void Repl::enter()
     OnDemandIStream input;
     input.setStdInEnabled(true);
     TokenProvider top(input, "stdin");
+    input.setMidTokenIndicator(top.isMidToken);
 	Parsey parsey(top);
 	NodeRef node;
     FundamentalRef head = std::make_shared<FundamentalEmpty>();

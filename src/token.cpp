@@ -30,6 +30,10 @@ std::string tokName(Token t) {
 		return "Token::SyntaxError";
 	case Token::Name:
 		return "Token::Name";
+	case Token::KnownName:
+		return "Token::KnownName";
+	case Token::NameQuery:
+		return "Token::NameQuery";
 	case Token::NoOP:
 		return "Token::NoOP";
 	}

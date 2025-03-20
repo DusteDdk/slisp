@@ -18,12 +18,37 @@ std::shared_ptr<T> mkNode(U&& u) {
 	return node;
 }
 
-NodeRef setNodeInfo(TokenInfo& ti, NodeRef node) {
+NodeRef Parsey::setNodeInfo(TokenInfo& ti, NodeRef node) {
 	node->origin = ti;
+/*	node->prevNode = prevNode;
+	prevNode->nextNode=node;
+	prevNode=node;*/
 	return node;
 }
 
-NodeRef Parsey::parse(TokenInfo& ti) {
+NodeRef Parsey::mkVar(TokenInfo &ti, int level) {
+	auto varNode = std::make_shared<NodeVariable>();
+	varNode->isQuery=(ti.token == Token::NameQuery);
+	varNode->isKnownName = (ti.token == Token::KnownName);
+	varNode->nameFromHead= !(ti.str.length());
+	varNode->name= ti.str.length() ? ti.str : ":headNamed:";
+
+	if(!varNode->isQuery) {
+		if(!top.advance()) {
+			return setNodeInfo(ti, mkNode<NodeErr>(std::format("ParserError: Unexpected end of file while parsing variable {}", varNode->name)));
+		}
+		varNode->valProvider = parse(top.curToken, ++level);
+		if(varNode->valProvider->t == NodeType::Error) {
+			return varNode->valProvider;
+		}
+
+
+	}
+
+	return setNodeInfo(ti, varNode);
+}
+
+NodeRef Parsey::parse(TokenInfo& ti, int level) {
 	Token inToken = ti.token;
 
 	if (inToken == Token::Eof) {
@@ -33,43 +58,13 @@ NodeRef Parsey::parse(TokenInfo& ti) {
 	switch (inToken)
 	{
 
-	case Token::Name: // Token (named by $)
-	{
-		auto nsv = std::make_shared<NodeVariable>();
-		auto next = top.nxtToken;
-		if (next.token == Token::Name) { // It's the "known" variant if it's followed by another ':'
-			top.advance();
-			nsv->isKnownName = true;
-		}
-		else if (next.token == Token::Identifier && next.str == "?") {
-			top.advance();
-			nsv->isQuery = true;
-		}
-		return setNodeInfo(ti, nsv);
-	}
-		break;
-	case Token::Identifier: // And directly named  names
-	{
-
-		// Check if this identifier is followed by one or two : in which case it's the name of a variable or known variable.
-		auto next = top.nxtToken;
-		if (next.token == Token::Name) {
-
-			auto nsv = std::make_shared<NodeVariable>(ti.str);
-			top.advance();
-			auto next = top.nxtToken;
-			if (next.token == Token::Name) { // It's the "known" variant if it's followed by another ':'
-				top.advance();
-				nsv->isKnownName = true;
-			}
-			else if (next.token == Token::Identifier && next.str == "?") {
-				top.advance();
-				nsv->isQuery = true;
-			}
-			return setNodeInfo(ti, nsv);
-		}
+	case Token::NameQuery:	// Query if Variable exists
+	case Token::KnownName: // Known Variable
+	case Token::Name: // Variable
+		return mkVar(ti, level);
+	break;
+	case Token::Identifier:
 		return setNodeInfo(ti, mkNode<NodeIdent>(ti.str));
-	}
 	case Token::Number:
 	{
 		char* end{};
@@ -83,20 +78,23 @@ NodeRef Parsey::parse(TokenInfo& ti) {
 		return setNodeInfo(ti, mkNode<NodeStr>(ti.str));
 	case Token::Loop:
 	{
-		if (top.nxtToken.token != Token::End) {
+		if (top.nxtToken.token != Token::End && top.nxtToken.token != Token::IEnd && top.nxtToken.token != Token::LEnd) {
 			return setNodeInfo(ti, mkNode<NodeErr>("SyntaxError: @ only allowed as last element in list"));
 		}
 		return setNodeInfo(ti, mkNode<Node>(NodeType::Loop));
 	}
 	case Token::Begin:
 	{
-		auto list = std::make_shared<NodeCall>();
+		auto callNode = std::make_shared<NodeCall>();
 		top.advance();
 		if (top.curToken.token != Token::Identifier) {
+			//TODO: Just descend instead to support dynamically selecting call by calling a function that determines the name?
 			return setNodeInfo(ti, mkNode<NodeErr>(std::format("Syntax error: Expected Identifer, got {}", tokName(top.curToken.token))));
 		}
-		list->ident = std::make_unique<NodeIdent>(top.curToken.str);
-		list->name = list->ident->str;
+		callNode->ident = std::make_unique<NodeIdent>(top.curToken.str);
+		callNode->name = callNode->ident->str;
+
+		setNodeInfo(ti, callNode);
 
 		while (top.advance()) {
 
@@ -104,24 +102,21 @@ NodeRef Parsey::parse(TokenInfo& ti) {
 				break;
 			}
 
-			if( top.curToken.token == Token::SyntaxError) {
-				return setNodeInfo(ti, mkNode<NodeErr>(std::format("{}: Error in call body: {}", TokInfoStr(ti), top.curToken.str)));
+			NodeRef n = parse(top.curToken, ++level);
+			if(n->t == NodeType::Error) {
+				return n;
 			}
-			if (top.curToken.token == Token::Eof) {
-				return setNodeInfo(ti, mkNode<NodeErr>(std::format("{}: Syntax error, call not closed.", TokInfoStr(ti))));
-			}
-
-			NodeRef n = parse(top.curToken);
-			list->args.push_back(n);
+			callNode->args.push_back(n);
 		}
-		return list;
+
+		return callNode;
 	}
 
 	case Token::IBegin:
 	{
-		auto list = std::make_shared<NodeCall>();
-
-		list->name = "imp";
+		auto impNode = std::make_shared<NodeCall>();
+		impNode->name = "imp";
+		setNodeInfo(ti, impNode);
 
 		while (top.advance()) {
 
@@ -129,24 +124,22 @@ NodeRef Parsey::parse(TokenInfo& ti) {
 				break;
 			}
 
-			if( top.curToken.token == Token::SyntaxError) {
-				return setNodeInfo(ti, mkNode<NodeErr>(std::format("{}: Error in imp body: {}", TokInfoStr(ti), top.curToken.str)));
-			}
-			if (top.curToken.token == Token::Eof) {
-				return setNodeInfo(ti, mkNode<NodeErr>(std::format("{}: Syntax error, imp not closed.", TokInfoStr(ti))));
+			NodeRef n = parse(top.curToken, ++level);
+			if(n->t == NodeType::Error) {
+				return n;
 			}
 
-			NodeRef n = parse(top.curToken);
-			list->args.push_back(n);
+			impNode->args.push_back(n);
 		}
-		return list;
+
+		return impNode;
 	}
 
 	case Token::LBegin:
 	{
-		auto list = std::make_shared<NodeCall>();
-
-		list->name = "list";
+		auto listNode = std::make_shared<NodeCall>();
+		listNode->name = "list";
+		setNodeInfo(ti, listNode);
 
 		while (top.advance()) {
 
@@ -154,23 +147,22 @@ NodeRef Parsey::parse(TokenInfo& ti) {
 				break;
 			}
 
-			if( top.curToken.token == Token::SyntaxError) {
-				return setNodeInfo(ti, mkNode<NodeErr>(std::format("{}: Error in list body: {}", TokInfoStr(ti), top.curToken.str)));
+			NodeRef n = parse(top.curToken, ++level);
+			if(n->t == NodeType::Error) {
+				return n;
 			}
-			if (top.curToken.token == Token::Eof) {
-				return setNodeInfo(ti, mkNode<NodeErr>(std::format("{}: Syntax error, list not closed.", TokInfoStr(ti))));
-			}
-
-			NodeRef n = parse(top.curToken);
-			list->args.push_back(n);
+			listNode->args.push_back(n);
 		}
-		return list;
+
+		return listNode;
 	}
 
 	case Token::End:
 		return setNodeInfo(ti, mkNode<NodeErr>("SyntaxError: Stray ')'"));
+
 	case Token::IEnd:
 		return setNodeInfo(ti, mkNode<NodeErr>("SyntaxError: Stray '}'"));
+
 	case Token::LEnd:
 		return setNodeInfo(ti, mkNode<NodeErr>("SyntaxError: Stray ']'"));
 
@@ -179,10 +171,10 @@ NodeRef Parsey::parse(TokenInfo& ti) {
 
 	case Token::NoOP: // Used for pushing the previous token through without ending the stream or adding a meaningful token.
 		top.advance();
-		return parse(top.curToken);
+		return parse(top.curToken, level);
 
 	case Token::Eof:
-		return setNodeInfo(ti, mkNode<NodeErr>(std::format("{}: System Error: Unexpected EOF token.", TokInfoStr(top.curToken))));
+		return setNodeInfo(ti, mkNode<NodeErr>(std::format("{}: Unexpected end of file", TokInfoStr(top.curToken))));
 		break;
 
 	}

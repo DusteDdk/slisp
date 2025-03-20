@@ -1,5 +1,6 @@
 #ifndef TOKER_H_INCLUDED
 #define TOKER_H_INCLUDED
+#include <stack>
 #include <format>
 #include <istream>
 #include "token.h"
@@ -7,7 +8,6 @@
 #define END_OF_TEXT (char)3
 
 class Toker {
-	int serial = 0;
 	std::istream& in;
 	bool replay = false;
 	char c=0;
@@ -15,6 +15,7 @@ class Toker {
 	bool isUnic=false;
 	bool getC();
 	Token flush(Token t);
+	Token emitStrTok(Token t);
 	std::string acc;
 	int rline, rcolumn;
 
@@ -25,6 +26,7 @@ class Toker {
 
 	int line, column;
 
+	bool isMidToken=false;
 
 	Token nextToken();
 };
@@ -46,6 +48,7 @@ class TokenProvider {
 	public:
 		TokenProvider(std::istream& inStream, std::string fname);
 		bool advance();
+		bool* isMidToken;
 		void reset(std::string fname);
 		TokenInfo curToken;
 		TokenInfo nxtToken;

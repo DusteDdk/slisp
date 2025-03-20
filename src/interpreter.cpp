@@ -78,7 +78,6 @@ class LFwindow : public LFunc {
 	LFwindow(std::string n) : LFunc(n), win(0),ren(0), width(640), height(480), wname("Unnamed slisp window")  {}
 	FundamentalRef run(FundamentalRef head, std::vector<FundamentalRef> args) override {
 			if(!win) {
-				
 
 				if(args.size()>0) {
 					if(args[0]->t == FType::String) {
@@ -122,11 +121,11 @@ class LFwindow : public LFunc {
 	};
 
 	FundamentalRef run(NodeIdent* ident, FundamentalRef head, std::vector<FundamentalRef> args) override {
-		if(ident->sub == nullptr) {
+		if(ident->str == "window") {
 			return run(head, args);
 		}
 
-			if(ident->sub->str == "color") {
+			if(ident->str == "color") {
 				if(args.size() == 3) {
 
 				  red=(uint8_t)std::dynamic_pointer_cast<FundamentalNumber>(args[0])->n;
@@ -137,14 +136,14 @@ class LFwindow : public LFunc {
 				}
 			}
 
-			if(ident->sub->str == "fill") {
+			if(ident->str == "window.fill") {
 				SDL_RenderFillRect(ren, NULL);
 			}
 
-			if(ident->sub->str == "dot") {
+			if(ident->str == "window.dit") {
 				if(args.size() == 3) {
 					SDL_Rect r;
-					
+
 					r.x=(int)std::dynamic_pointer_cast<FundamentalNumber>(args[1])->n;
 					r.y=(int)std::dynamic_pointer_cast<FundamentalNumber>(args[2])->n;
 					r.w=(int)(std::dynamic_pointer_cast<FundamentalNumber>(args[0])->n/2);
@@ -154,7 +153,7 @@ class LFwindow : public LFunc {
 				}
 			}
 
-			if(ident->sub->str == "flip") {
+			if(ident->str == "window.flip") {
 				SDL_RenderPresent(ren);
 
 				SDL_Event event;
@@ -438,7 +437,6 @@ public:
 			last = a;
 		}
 		return std::make_shared<FundamentalFalse>(last);
-		
 	}
 
 };
@@ -541,59 +539,13 @@ public:
 
 FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRef h) {
 
-	// The interpreter implements a few of the calls: imp, =
 	if (call->name == "imp") {
-		FundamentalRef res = std::make_shared<FundamentalEmpty>();
-		FundamentalRef prev = std::make_shared<FundamentalEmpty>(); // For head "skipping"
-		res = h;
-		prev = h;
-		//for (auto arg : call->args) {
+		FundamentalRef res = h;
 		for(size_t i = 0; i < call->args.size(); i++) {
 			NodeRef arg = call->args[i];
 			if (arg->t == NodeType::Loop) {
 				res = std::make_shared<FundamentalLoop>(res);
-			}
-			else if (arg->t == NodeType::Variable) {
-				auto varNode = std::dynamic_pointer_cast<NodeVariable>(arg);
-
-				if (varNode->isQuery) {
-					if (scopey.has(varNode->str)) {
-						auto varVal = scopey.read(varNode->str);
-						res = std::make_shared<FundamentalTrue>(varVal);
-					}
-					else {
-						res = std::make_shared<FundamentalFalse>(std::make_shared<FundamentalString>( varNode->str));
-					}
-					prev = res;
-					continue; // Skip rest of variable stuff
-				}
-
-				if (varNode->needsName) {
-					varNode->needsName = false;
-					switch (res->t) {
-					case FType::Number:
-					case FType::String:
-						varNode->str = res->toString();
-						break;
-					default:
-						return mkErr(std::format("Unexpected type for variable name: {}", res->toString()), varNode);
-					}
-				}
-
-				auto vd = std::make_shared<FundamentalVariableDefinition>(varNode->str);
-				vd->isKnownName = varNode->isKnownName;
-
-				if (i + 1 == call->args.size()) {
-					return mkErr(std::format("SyntaxError declaring variable {} with no value", vd->toString() ), varNode);
-				}
-				i++;
-				res = descend(call->args[i], prev);
-				vd->v = res;
-				res = wrapPotentialErr( scopey.write(vd), call );
-
-			}
-			else {
-				prev = res;
+			} else {
 				res = descend(arg, res);
 				if (res->t == FType::Loop) {
 					auto fl = std::dynamic_pointer_cast<FundamentalLoop>(res);
@@ -615,7 +567,6 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 		if(!call->args.size()) {
 			return mkErr("deref Expects exactly one argument", call);
 		}
-		
 
 		if(call->args[0]->t != NodeType::Ident) {
 			return mkErr("deref Expects argument to be Identifier", call);
@@ -635,7 +586,7 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 		if (call->args.size() == 0) {
 			return mkErr("? Expects at least one argument", call);
 		}
-		
+
 		if (call->args.size() == 1) {
 			if (h->t != FType::False) {
 				return descend(call->args[0], h, true);
@@ -656,7 +607,7 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 			}
 			return descend(call->args[2], h, true);
 		}
-		
+
 		return mkErr(std::format("? {} is too many args!", call->args.size()), call);
 	}
 
@@ -716,7 +667,40 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 		return wrapPotentialErr( scopey.read(ident->str), ident);
 	}
 	case NodeType::Variable:
-		return mkErr("Unexpected attempt to declare variable outside imp.", n);
+	{
+		auto varNode = std::dynamic_pointer_cast<NodeVariable>(n);
+
+		if(varNode->nameFromHead) {
+			switch (h->t) {
+				case FType::Number:
+				case FType::String:
+					varNode->name = h->toString();
+					break;
+				default:
+					return mkErr(std::format("Useless head type for variable name: {}", h->toString()), varNode);
+			}
+		}
+
+		if (varNode->isQuery) {
+			if (scopey.has(varNode->name)) {
+				auto varVal = scopey.read(varNode->name);
+				return std::make_shared<FundamentalTrue>(varVal);
+			}
+			return std::make_shared<FundamentalFalse>(std::make_shared<FundamentalString>(varNode->name));
+		}
+
+		FundamentalRef varValue = descend(varNode->valProvider, h);
+		if(varValue->t == FType::Error) {
+			return wrapPotentialErr(varValue, varNode->valProvider);
+		}
+
+		auto vd = std::make_shared<FundamentalVariableDefinition>(varNode->name);
+		vd->isKnownName = varNode->isKnownName;
+		vd->v = varValue;
+		auto ret = wrapPotentialErr( scopey.write(vd), varNode);
+		return ret;
+
+	}
 	case NodeType::Number:
 	{
 		auto num = std::dynamic_pointer_cast<NodeNum>(n);
@@ -751,6 +735,11 @@ Interpreter::Interpreter() {
 	calls["|"] = std::make_shared<LFor>("|");
 	calls["list"] = std::make_shared<LFlist>("list");
 	calls["window"] = std::make_shared<LFwindow>("window");
+	calls["window.color"] = calls["window"];
+	calls["window.flip"] = calls["window"];
+	calls["window.dot"] = calls["window"];
+	calls["window.fill"] = calls["window"];
+
 }
 
 void Interpreter::run(NodeRef program)
