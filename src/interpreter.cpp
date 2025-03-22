@@ -140,7 +140,7 @@ class LFwindow : public LFunc {
 				SDL_RenderFillRect(ren, NULL);
 			}
 
-			if(ident->str == "window.dit") {
+			if(ident->str == "window.dot") {
 				if(args.size() == 3) {
 					SDL_Rect r;
 
