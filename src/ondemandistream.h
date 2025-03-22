@@ -4,18 +4,18 @@
 #include <iostream>
 #include <streambuf>
 #include <queue>
+#include "toker.h"
 
 class OnDemandStreamBuf : public std::streambuf
 {
 private:
     std::string buffer_ = "";
     std::queue<std::string> cmds;
-
 public:
     explicit OnDemandStreamBuf(bool _useStdin);
     bool useStdIn;
-    bool *isMidToken = nullptr;
     void add(std::string cmd);
+    TokenProvider* top=nullptr;
 
     void reset();
 
@@ -29,7 +29,8 @@ private:
     OnDemandStreamBuf buf;
 public:
     OnDemandIStream();
-    void setMidTokenIndicator(bool* isMidToken);
+    void setMidTokenIndicator(TokenProvider* top);
+    int busyLevel();
     void setStdInEnabled(bool useStdIn);
     void reset();
     void add(std::string cmd);

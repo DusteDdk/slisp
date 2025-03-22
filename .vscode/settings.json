@@ -2,6 +2,18 @@
     "files.associations": {
         "ostream": "cpp",
         "print": "cpp",
-        "iosfwd": "cpp"
+        "iosfwd": "cpp",
+        "format": "cpp",
+        "__locale": "cpp",
+        "any": "cpp",
+        "bitset": "cpp",
+        "memory": "cpp",
+        "random": "cpp",
+        "future": "cpp",
+        "optional": "cpp",
+        "algorithm": "cpp",
+        "sstream": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }

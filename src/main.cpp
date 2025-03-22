@@ -30,12 +30,14 @@ int main(int argc, char* argv[]) {
 		Parsey p(top);
 
 		Interpreter i;
-		if(! top.advance() ) {
+		if(! top.advanceSkipNoOp() ) {
 			std::println("Error in input file.");
 			return 1;
 		}
+
 		NodeRef firstNode = p.parse( top.curToken );
 		i.run(firstNode);
+
 	}
 	return 0;
 }

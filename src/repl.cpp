@@ -15,8 +15,7 @@
 
 #include <sstream>
 
-const std::string replInitStr = R"REPL_HELP_STR({ help: "
-REPL help:
+const std::string replInitStr = R"REPL_HELP_STR({ help: "REPL help:
     Tip: Run in rlwrap.
     exit - Exits the repl
     ctrl + c / ctrl + d - Exits the repl
@@ -36,7 +35,7 @@ void Repl::enter()
     OnDemandIStream input;
     input.setStdInEnabled(true);
     TokenProvider top(input, "stdin");
-    input.setMidTokenIndicator(top.isMidToken);
+    input.setMidTokenIndicator(&top);
 	Parsey parsey(top);
 	NodeRef node;
     FundamentalRef head = std::make_shared<FundamentalEmpty>();
@@ -47,15 +46,11 @@ void Repl::enter()
 
 	while(top.advance() && top.nxtToken.token != Token::Eof ) {
         node = parsey.parse(top.curToken);
-
-        if(top.curToken.token == Token::Eof) {
-            std::println("");
-            break;
-        }
-
         if (node->t == NodeType::Error) {
-            std::println("\n{}\n", node->toString());
             continue;
+        }
+        if(top.curToken.token == Token::Eof) {
+            break;
         }
 
         // This is to avoid modifying the interpreter for the "repl scope"
@@ -66,9 +61,8 @@ void Repl::enter()
         }
 
         if(head->t == FType::Error) {
-            std::println("\n{}\n", head->toString());
+            std::println("\n{}", head->toString());
             input.reset();
-            input.add("0");
         } else {
             std::println("\n$ {}", head->toString());
         }

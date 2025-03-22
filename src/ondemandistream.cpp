@@ -8,6 +8,7 @@ OnDemandStreamBuf::OnDemandStreamBuf(bool _useStdin): useStdIn(_useStdin) {
     setg(nullptr, nullptr, nullptr);
 }
 
+
 void OnDemandStreamBuf::add(std::string cmd) {
     cmds.push(cmd);
 }
@@ -35,15 +36,14 @@ int OnDemandStreamBuf::underflow() {
         }
     } else if(useStdIn && std::cin) {
 
-        if( isMidToken != nullptr) {
-            if(*isMidToken) {
-                std::print("---+ ");
-            } else {
-                std::print("~ ");
-            }
+
+        if(top->getBlockReason() != BlockReason::Waiting) {
+            std::print("{} ", BlockReasonStr(top->getBlockReason()));
         }
+        std::print("~ ");
 
         std::string line("");
+
         if(std::getline(std::cin, line)) {
             if( line != "exit" ) {
                 std::cin.clear();
@@ -70,10 +70,11 @@ OnDemandIStream::OnDemandIStream(): buf(false) {
     rdbuf(&buf);
 }
 
-void OnDemandIStream::setMidTokenIndicator(bool *isMidToken)
+void OnDemandIStream::setMidTokenIndicator(TokenProvider* top)
 {
-    buf.isMidToken=isMidToken;
+    buf.top=top;
 }
+
 
 void OnDemandIStream::setStdInEnabled(bool useStdIn)
 {

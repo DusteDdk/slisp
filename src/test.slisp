@@ -41,7 +41,7 @@
 					max: #maxpos
 				}
 				read: {
-					(? (| (> max) (< min)) { dir:: (* dir (- 0 1) )})
+                    (? (| (> max) (< min)) { dir:: (* dir (- 9 1 ) )})
 					v: (+ v 1)
 				}
 			}

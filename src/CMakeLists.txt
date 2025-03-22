@@ -1,4 +1,4 @@
-set(TARGET_NAME SillyLisp)
+set(TARGET_NAME slisp)
 
 find_package(SDL2 REQUIRED)
 

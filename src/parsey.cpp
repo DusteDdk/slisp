@@ -34,7 +34,7 @@ NodeRef Parsey::mkVar(TokenInfo &ti, int level) {
 	varNode->name= ti.str.length() ? ti.str : ":headNamed:";
 
 	if(!varNode->isQuery) {
-		if(!top.advance()) {
+		if(!top.advanceSkipNoOp()) {
 			return setNodeInfo(ti, mkNode<NodeErr>(std::format("ParserError: Unexpected end of file while parsing variable {}", varNode->name)));
 		}
 		varNode->valProvider = parse(top.curToken, ++level);
@@ -86,7 +86,7 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 	case Token::Begin:
 	{
 		auto callNode = std::make_shared<NodeCall>();
-		top.advance();
+		top.advanceSkipNoOp();
 		if (top.curToken.token != Token::Identifier) {
 			//TODO: Just descend instead to support dynamically selecting call by calling a function that determines the name?
 			return setNodeInfo(ti, mkNode<NodeErr>(std::format("Syntax error: Expected Identifer, got {}", tokName(top.curToken.token))));
@@ -96,8 +96,7 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 
 		setNodeInfo(ti, callNode);
 
-		while (top.advance()) {
-
+		while (top.advanceSkipNoOp()) {
 			if (top.curToken.token == Token::End) {
 				break;
 			}
@@ -108,7 +107,6 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 			}
 			callNode->args.push_back(n);
 		}
-
 		return callNode;
 	}
 
@@ -118,7 +116,7 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 		impNode->name = "imp";
 		setNodeInfo(ti, impNode);
 
-		while (top.advance()) {
+		while (top.advanceSkipNoOp()) {
 
 			if (top.curToken.token == Token::IEnd) {
 				break;
@@ -141,7 +139,7 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 		listNode->name = "list";
 		setNodeInfo(ti, listNode);
 
-		while (top.advance()) {
+		while (top.advanceSkipNoOp()) {
 
 			if (top.curToken.token == Token::LEnd) {
 				break;
@@ -170,7 +168,7 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 		return setNodeInfo(ti, mkNode<NodeErr>(top.curToken.str));
 
 	case Token::NoOP: // Used for pushing the previous token through without ending the stream or adding a meaningful token.
-		top.advance();
+		top.advanceSkipNoOp();
 		return parse(top.curToken, level);
 
 	case Token::Eof:

@@ -1,35 +1,23 @@
 #ifndef TOKER_H_INCLUDED
 #define TOKER_H_INCLUDED
-#include <stack>
+
+#include <list>
 #include <format>
 #include <istream>
 #include "token.h"
 
 #define END_OF_TEXT (char)3
 
-class Toker {
-	std::istream& in;
-	bool replay = false;
-	char c=0;
-	std::string unic="";
-	bool isUnic=false;
-	bool getC();
-	Token flush(Token t);
-	Token emitStrTok(Token t);
-	std::string acc;
-	int rline, rcolumn;
-
-	public:
-		Toker(std::istream& inStream);
-
-	std::string str;
-
-	int line, column;
-
-	bool isMidToken=false;
-
-	Token nextToken();
+enum class BlockReason : int_fast8_t {
+	Unblocked=0,
+	Waiting=1,
+	String,
+	Number,
+	Comment,
+	Identifier
 };
+
+std::string BlockReasonStr (BlockReason r);
 
 struct TokenInfo {
 	Token token;
@@ -37,18 +25,45 @@ struct TokenInfo {
 	std::string file;
 	int line, column;
 };
+class Toker {
+	std::istream& in;
+	char c=0;
+	std::string unic="";
+	bool isUnic=false;
+	bool getC();
+	int cline, ccolumn;
+	int pline, pcolumn;
+	std::list<TokenInfo> waitingTokens;
+	TokenInfo eof;
+	std::string acc="";
+	std::string fileName;
+
+	bool dontConsumeChar=false;
+	void queueToken(Token t);
+	TokenInfo dequeueToken();
+	TokenInfo token(Token t);
+	TokenInfo token(Token t, std::string txt);
+
+
+	public:
+	Toker(std::istream& inStream);
+	void reset(std::string fname);
+
+	BlockReason blockReason;
+	TokenInfo nextToken();
+};
+
 
 std::string TokInfoStr(TokenInfo& t);
 
 class TokenProvider {
 	private:
 	Toker toker;
-	std::string fileName;
-	TokenInfo readNextToken();
 	public:
 		TokenProvider(std::istream& inStream, std::string fname);
 		bool advance();
-		bool* isMidToken;
+		bool advanceSkipNoOp();
+		BlockReason getBlockReason();
 		void reset(std::string fname);
 		TokenInfo curToken;
 		TokenInfo nxtToken;

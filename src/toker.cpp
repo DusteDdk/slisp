@@ -4,30 +4,81 @@
 
 using namespace std;
 
-Toker::Toker(std::istream& inStream) : in(inStream), acc("") {
+
+
+Toker::Toker(std::istream &inStream) : in(inStream)
+{
+    reset("<?>");
+}
+
+
+void Toker::reset(std::string fname)
+{
+	blockReason=BlockReason::Unblocked;
 	c = 0;
-	line = 1;
-	rline = 1;
-	column = 0;
-	rcolumn = 0;
+	pline = 1;
+	cline = 1;
+	pcolumn = 0;
+	ccolumn = 0;
+	fileName=fname;
+	waitingTokens.clear();
+}
+
+void Toker::queueToken(Token t)
+{
+	auto ti = TokenInfo{
+		.token = t,
+		.str = acc,
+		.file=fileName,
+		.line = pline,
+		.column = pcolumn,
+	};
+
+	//std::println("queued token: {}", TokInfoStr(ti));
+
+	waitingTokens.push_back(ti);
+	pline=cline;
+	pcolumn=ccolumn;
+	acc="";
+}
+
+TokenInfo Toker::dequeueToken()
+{
+	if(!waitingTokens.size()) {
+		std::println("System Error: tried to dequeue token from empty token queue!");
+	}
+
+	TokenInfo ti = waitingTokens.front();
+	waitingTokens.pop_front();
+
+	return ti;
+}
+
+TokenInfo Toker::token(Token t, std::string txt) {
+	acc = txt;
+	queueToken(t);
+	return dequeueToken();
+}
+
+TokenInfo Toker::token(Token t)
+{
+    queueToken(t);
+	return dequeueToken();
 }
 
 bool Toker::getC() {
 
-	if (replay) {
-		replay=false;
-		return true;
+	if( in.eof() ) {
+		return false;
 	}
 
-	if (!in.eof()) {
-		if (c == '\n') {
-			rline++;
-			rcolumn = 1;
-		}
-		if (c != '\n' && c != '\r') {
-			if(c != END_OF_TEXT) {
-				rcolumn++;
-			}
+	if (c == '\n') {
+		cline++;
+		ccolumn = 1;
+	}
+	if (c != '\n' && c != '\r') {
+		if(c != END_OF_TEXT) {
+			ccolumn++;
 		}
 	}
 
@@ -44,7 +95,7 @@ bool Toker::getC() {
 		// Read next byte (byte 2)
 		retVal = !!in.get(n);
 		if(!retVal || (n & 0b11000000) != 0b10000000) {
-			std::println("UTF8 error while decoding byte 1, line:{} column:{} Byte 0:{:x} Byte 1:{:x} ", line, column, (uint8_t)c, (uint8_t)n);
+			std::println("UTF8 error while decoding byte 1, line:{} column:{} Byte 0:{:x} Byte 1:{:x} ", cline, ccolumn, (uint8_t)c, (uint8_t)n);
 			return false;
 		}
 		unic += n;
@@ -54,7 +105,7 @@ bool Toker::getC() {
 			//Read next byte (byte 2)
 			retVal = !!in.get(n);
 			if(!retVal || (n & 0b11000000) != 0b10000000) {
-				std::println("UTF8 error while decoding byte 2, line:{} column:{} Byte 1:{:x} Byte 2:{:x} ", line, column, (uint8_t)c, (uint8_t)n);
+				std::println("UTF8 error while decoding byte 2, line:{} column:{} Byte 1:{:x} Byte 2:{:x} ", cline, ccolumn, (uint8_t)c, (uint8_t)n);
 				return false;
 			}
 			unic += n;
@@ -64,7 +115,7 @@ bool Toker::getC() {
 				// Read next byte(byte3)
 				retVal = !!in.get(n);
 				if(!retVal || (n & 0b11000000) != 0b10000000) {
-					std::println("UTF8 error while decoding byte 3, line:{} column:{} Byte 2:{:x} Byte 3:{:x} ", line, column, (uint8_t)c, (uint8_t)n);
+					std::println("UTF8 error while decoding byte 3, line:{} column:{} Byte 2:{:x} Byte 3:{:x} ", cline, ccolumn, (uint8_t)c, (uint8_t)n);
 					return false;
 				}
 				unic += n;
@@ -77,70 +128,92 @@ bool Toker::getC() {
 }
 
 
-Token Toker::emitStrTok(Token t) {
-	str = acc;
-	acc = "";
-	return t;
-}
 
-// Identifiers are special tokens, they're "everything that's not whitespace or consumed into other tokens"
-// So we emit them whenever we've accumulated something that fits that category, until whitespace or something else to consume.
-// Meaning we have to "push" them out at weird places, we do that by holding back the current character, emit the identifier, and then
-// next time, we're ready for a new token.
-Token Toker::flush(Token t) {
-	if (acc.length()) {
-		replay=true;
-		return emitStrTok(Token::Identifier);
+
+bool shouldEmitIdent(char c) {
+	if(isspace(c)) {
+		return true;
 	}
 
-	line = rline;
-	column = rcolumn;
-
-	str="";
-	acc="";
-	return t;
+	switch(c) {
+		case END_OF_TEXT:
+		case '@':
+		case '[':
+		case '{':
+		case '(':
+		case ']':
+		case '}':
+		case ')':
+		case '"':
+		return true;
+		default:
+	}
+	return false;
 }
 
-Token Toker::nextToken() {
+TokenInfo Toker::nextToken() {
+
+	blockReason=BlockReason::Unblocked;
+
+	if(waitingTokens.size()) {
+		std::println(">>> dequeue in nextToken()");
+		return dequeueToken();
+	}
 
 	if (in.eof()) {
-		return Token::Eof;
+		return eof;
 	}
 
-	isMidToken = false;
-	while (getC()) {
+	pline=cline;
+	pcolumn=ccolumn;
 
-		if (isspace(c)) {
-			if (acc.length()) {
-				return emitStrTok(Token::Identifier);
-			}
+
+	blockReason=BlockReason::Waiting;
+	while ( dontConsumeChar || getC()) {
+
+
+		if(waitingTokens.size()) {
+			std::println(">>> dequeue in while()");
+			return dequeueToken();
+		} else if( acc.length() && shouldEmitIdent(c) ) {
+			dontConsumeChar=true;
+			return token(Token::Identifier);
+		}
+
+		dontConsumeChar=false;
+
+		if(isspace(c)) {
 			continue;
 		}
+
+		// And finally look for stuff of interest
 		switch (c) {
 
 		case END_OF_TEXT:
-			return flush(Token::NoOP);
+			return token(Token::NoOP);
 		case ':':
 		{
 			if(!getC()) {
-				str = "SyntaxError: Unexpected end of file after ':'";
-				return Token::SyntaxError;
+				return token(Token::SyntaxError, "SyntaxError: Unexpected end of file after ':'");
 			}
 			// These are set for identifiers, but many others won't set it, calculating it is luckily easy
-			line = rline;
-			column = ( rcolumn - 1 - acc.length() ); // Works for both when there is is something accumulated and when there is not.
+			pline = cline;
+			pcolumn = ( ccolumn - 1 - acc.length() ); // Works for both when there is is something accumulated and when there is not.
+
 			switch(c) {
 				case ':':
-					return emitStrTok(Token::KnownName); // Don't replay
+					return token(Token::KnownName);
 				case '?':
-					return emitStrTok(Token::NameQuery);
+					return token(Token::NameQuery);
 				default:
-					replay=true;
-					return emitStrTok(Token::Name); // replay
+				{
+					dontConsumeChar=true;
+					return token(Token::Name);
+				}
 			}
 		}
 		case '@':
-			return flush(Token::Loop);
+			return token(Token::Loop);
 
 		//Possibly a comment.
 		case '/':
@@ -148,126 +221,143 @@ Token Toker::nextToken() {
 		{
 			if(acc == "/") {
 				if(c=='*') {
+					blockReason=BlockReason::Comment;
 					int blockDepth=1; // Not being able to next block comments always annoyed me.
 					acc="  ";
-					isMidToken=true;
 					while(blockDepth && getC() ) {
 						acc[0]=acc[1];
 						acc[1]=c;
 						if(acc=="/*") {
 							blockDepth++;
+							acc="  ";
 						} else if(acc=="*/") {
 							blockDepth--;
+							acc="  ";
 						}
 					}
 
-					isMidToken=false;
 					if(in.eof() && blockDepth) {
-						str = std::format("SyntaxError: Unterminated block comment (depth: {}) started at line:{} colum:{}", blockDepth, line, column);
-						return Token::SyntaxError;
+						return token(Token::SyntaxError, std::format("SyntaxError: Unterminated block comment (depth: {}) started at line:{} colum:{}", blockDepth, pline, pcolumn));
 					}
 					acc="";
 					continue; // Comment ended, continue outer loop without token emission
 				} else if(c=='/') {
-					isMidToken=true;
+					blockReason=BlockReason::Comment;
+
 					while( getC() ) {
 						if(c=='\n') {
 							break;
 						}
 					}
 					acc="";
-					isMidToken=false;
 					continue; // Comment ended, continue outer loop without token emission
 				}
 			}
 			break;
 		}
 		case '[':
-			return flush(Token::LBegin);
+			return token(Token::LBegin);
 		case '{':
-			return flush(Token::IBegin);
+			return token(Token::IBegin);
 		case '(':
-			return flush(Token::Begin);
+			return token(Token::Begin);
 
 		case ')':
-			return flush(Token::End);
+			return token(Token::End);
 		case '}':
-			return flush(Token::IEnd);
+			return token(Token::IEnd);
 		case ']':
-			return flush(Token::LEnd);
+			return token(Token::LEnd);
 
 		case '"':
 			// identifier"string" should be interpreted as identifer "string"
+			// Like, it should be valid to have no separators between an identifier and a string.
 			if (acc.length()) {
-				return flush(Token::Identifier);
+				queueToken(Token::Identifier);
 			}
-			isMidToken=true;
-			str= "";
-			line = rline;
-			column = rcolumn;
+			blockReason=BlockReason::String;
 			while (getC()) {
 				if (c == '"') {
-					if (str.length() && str.back() == '\\') {
-						str.pop_back();
+					if (acc.length() && acc.back() == '\\') {
+						acc.pop_back();
 					}
 					else {
-						isMidToken=false;
-						return Token::String;
+						return token(Token::String);
 					}
 				}
-				str += c;
+				acc += c;
 			}
-			str = std::format("SyntaxError: Unterminated string: {}{}", str.substr(0,10), (str.length()>10)?"...":".");
-			isMidToken=false;
-			return Token::SyntaxError;
+
+			return token(Token::SyntaxError, "SyntaxError: Unterminated string.");
 		}
 
 		// Capture start of identifier
 		if (!acc.length()) {
-			line = rline;
-			column = rcolumn;
+			pline = cline;
+			pcolumn = ccolumn;
 		}
 
 		// Valid number decls: .1 -.1 1 -1
 		bool hasDot = (c == '.');
-		if (!acc.length() && (isdigit(c) || hasDot || ( c== '-'))) {
+		bool isNegative = (c == '-');
+		bool hasDigit=isdigit(c);
+		if ( !acc.length() && ( hasDot || isNegative || hasDigit) ) {
 
-			do {
-				acc += c;
-				if (!getC()) {
-					return Token::Eof;
-				}
-
+			acc = c;
+			blockReason=BlockReason::Number;
+			while( getC() ) {
 				if (c == '.') {
 					if (hasDot) {
-						str = std::format("SyntaxError: Multiple dots in number '{}'", str);
-
-						return Token::SyntaxError;
+						return token(Token::SyntaxError, std::format("SyntaxError: Multiple dots in number '{}'", acc));
 					}
 					hasDot = true;
+				} else if( isdigit(c) ) {
+					hasDigit=true; // a number must have some digits.
+				} else {
+					break;
 				}
-			} while (isdigit(c) || c == '.');
-			if(acc == ".") {
-				acc="";
-				str = std::format("Error: Dot not followed by a digit is not yet a valid syntax,");
-				return Token::SyntaxError;
+				acc += c;
 			}
 
-			replay=true;
-
-			if( acc == "-" ) {
-				// - is a valid identifier, so in case we entered the loop due to that condition being, but then exiting after reading the next token, we have correctly accumulated it
-				continue; // Replay is set, this time we no longer match the "-" condition.
+			dontConsumeChar=true;
+			if(hasDigit) {
+				return token(Token::Number); //maybe queue instead?
 			}
-
-			return emitStrTok(Token::Number);
+			continue;
 		}
 
-		// If nothing else matched, then we add the character to the accumulating string, it is destined as an identifier if not recognized as a comment or something else.
+		// If we reach this, it's an identifier (or becomes a variable)
+		blockReason=BlockReason::Identifier;
 		acc += c;
 	}
 
-	return flush(Token::Eof);
+	eof.token=Token::Eof;
+	eof.line=cline;
+	eof.column=ccolumn;
+	eof.str="";
+	eof.file=fileName;
+
+	return nextToken();
+}
+
+
+std::string BlockReasonStr (BlockReason r) {
+	switch(r) {
+		case BlockReason::Unblocked:
+			return "Unblocked";
+		case BlockReason::Waiting:
+			return "Waiting";
+		case BlockReason::String:
+			return "String";
+		case BlockReason::Number:
+			return "Number";
+		case BlockReason::Comment:
+			return "comment";
+		case BlockReason::Identifier:
+			return "Identifier";
+		default:
+			return "Unknown";
+	}
 }
 
 std::string TokInfoStr(TokenInfo& t) {
@@ -278,33 +368,22 @@ std::string TokInfoStr(TokenInfo& t) {
 }
 
 
-TokenProvider::TokenProvider(std::istream &inStream, std::string fname): toker(inStream), fileName(fname), isMidToken( &toker.isMidToken) {
-	reset(fileName);
+TokenProvider::TokenProvider(std::istream &inStream, std::string fname): toker(inStream) {
+	reset(fname);
 }
 
 void TokenProvider::reset(std::string fname) {
-	fileName=fname;
+	toker.reset(fname);
 	curToken.column=0;
 	curToken.line=0;
-	curToken.file=fileName;
 	curToken.str="";
 	curToken.token=Token::NoOP;
 	nxtToken.column=0;
 	nxtToken.line=0;
-	nxtToken.file=fileName;
 	nxtToken.str="";
 	nxtToken.token=Token::NoOP;
 }
 
-TokenInfo TokenProvider::readNextToken() {
-	TokenInfo ti;
-	ti.token = toker.nextToken();
-	ti.line = toker.line;
-	ti.column = toker.column;
-	ti.str = toker.str;
-	ti.file = fileName;
-	return ti;
-}
 
 
 
@@ -315,7 +394,22 @@ bool TokenProvider::advance()
 	}
 
 	curToken = nxtToken;
-	nxtToken = readNextToken();
+	nxtToken = toker.nextToken();
 
     return true;
+}
+
+bool TokenProvider::advanceSkipNoOp()
+{
+	bool more = false;
+	do {
+		more = advance();
+	}
+	while(curToken.token == Token::NoOP);
+	return more;
+}
+
+BlockReason TokenProvider::getBlockReason()
+{
+    return toker.blockReason;
 }
