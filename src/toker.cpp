@@ -21,10 +21,15 @@ void Toker::reset(std::string fname)
 	pcolumn = 0;
 	ccolumn = 0;
 	fileName=fname;
-	waitingTokens.clear();
 }
 
-void Toker::queueToken(Token t)
+
+TokenInfo Toker::token(Token t, std::string txt) {
+	acc = txt;
+	return token(t);
+}
+
+TokenInfo Toker::token(Token t)
 {
 	auto ti = TokenInfo{
 		.token = t,
@@ -34,36 +39,11 @@ void Toker::queueToken(Token t)
 		.column = pcolumn,
 	};
 
-	//std::println("queued token: {}", TokInfoStr(ti));
-
-	waitingTokens.push_back(ti);
 	pline=cline;
 	pcolumn=ccolumn;
 	acc="";
-}
-
-TokenInfo Toker::dequeueToken()
-{
-	if(!waitingTokens.size()) {
-		std::println("System Error: tried to dequeue token from empty token queue!");
-	}
-
-	TokenInfo ti = waitingTokens.front();
-	waitingTokens.pop_front();
-
 	return ti;
-}
 
-TokenInfo Toker::token(Token t, std::string txt) {
-	acc = txt;
-	queueToken(t);
-	return dequeueToken();
-}
-
-TokenInfo Toker::token(Token t)
-{
-    queueToken(t);
-	return dequeueToken();
 }
 
 bool Toker::getC() {
@@ -155,11 +135,6 @@ TokenInfo Toker::nextToken() {
 
 	blockReason=BlockReason::Unblocked;
 
-	if(waitingTokens.size()) {
-		std::println(">>> dequeue in nextToken()");
-		return dequeueToken();
-	}
-
 	if (in.eof()) {
 		return eof;
 	}
@@ -171,11 +146,7 @@ TokenInfo Toker::nextToken() {
 	blockReason=BlockReason::Waiting;
 	while ( dontConsumeChar || getC()) {
 
-
-		if(waitingTokens.size()) {
-			std::println(">>> dequeue in while()");
-			return dequeueToken();
-		} else if( acc.length() && shouldEmitIdent(c) ) {
+		if( acc.length() && shouldEmitIdent(c) ) {
 			dontConsumeChar=true;
 			return token(Token::Identifier);
 		}
@@ -273,7 +244,7 @@ TokenInfo Toker::nextToken() {
 			// identifier"string" should be interpreted as identifer "string"
 			// Like, it should be valid to have no separators between an identifier and a string.
 			if (acc.length()) {
-				queueToken(Token::Identifier);
+				std::println("This never happens");
 			}
 			blockReason=BlockReason::String;
 			while (getC()) {
@@ -321,7 +292,7 @@ TokenInfo Toker::nextToken() {
 
 			dontConsumeChar=true;
 			if(hasDigit) {
-				return token(Token::Number); //maybe queue instead?
+				return token(Token::Number);
 			}
 			continue;
 		}
@@ -337,7 +308,11 @@ TokenInfo Toker::nextToken() {
 	eof.str="";
 	eof.file=fileName;
 
-	return nextToken();
+	if(acc.length()) {
+		return token(Token::Identifier);
+	}
+
+	return eof;
 }
 
 

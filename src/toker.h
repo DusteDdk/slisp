@@ -33,14 +33,11 @@ class Toker {
 	bool getC();
 	int cline, ccolumn;
 	int pline, pcolumn;
-	std::list<TokenInfo> waitingTokens;
 	TokenInfo eof;
 	std::string acc="";
 	std::string fileName;
 
 	bool dontConsumeChar=false;
-	void queueToken(Token t);
-	TokenInfo dequeueToken();
 	TokenInfo token(Token t);
 	TokenInfo token(Token t, std::string txt);
 
