@@ -1,0 +1,159 @@
+/* It supports comment,
+    /* even nested ones */
+    // and single-line ones
+*/
+
+(print "
+===========================================================
+** Silly Language Imperative Syntatic Programming **
+Silly LISP (inspired) language for my own entertainment.
+
+Function calls happen inside parens, the first item is the name of the function.
+Any remaining items are parameters to the function.
+===========================================================
+")
+
+(                       // call
+    print               // name of function
+    "Hello there!"      // An argument, in this case, a literal string.
+    nl                  // another argument nl is an identifier that means newline.
+    (+                  // Another function call
+      1                 // and
+      2                 // its
+      -3)               // arguments
+    nl)
+
+(print "
+===========================================================
+SLISP tries to be weird.
+Almost everything is an expression.
+An expression leaves its value on the head
+What's the head ? The head is $
+It's carried from one expression to the next when expressions are evaluated imperatively.
+
+What?
+There's a function called imp, it's like if progn and let had looked at C and decided be more like that.
+Imp evaluates every argument one after another. When one argument has been evaluated, the value of it is put on the head
+===========================================================
+")
+
+(imp
+    var1: 1
+    var2: 2
+    var3: (+ var1 var2)
+    (print "var3 is: " var3 nl))
+
+(print "
+===========================================================
+{ } is syntatic sugar for (imp )
+===========================================================
+")
+
+{
+    var1: 1 // assign 1 to variable 1, leave 1 on head
+    (+ 3)   // + can take one or more arguments, if only one argument is taken, it takes head as first argument
+            // So this expression adds 3 to 1, leaving 4 on the head.
+    var2: (- 1) //  - can also take one or more arguments, it will subtract the rest from the first: So this expression subtracts 1 from 4, leaving 3 on the head.
+    (print) // Print can take 0 arguments, if no argument is provided, it takes head as its first argument. So this prints 3 to stdout.
+            // But print has nothing interesting to say, so it always returns head, you can think of it as head "passing through" print.
+    (print " is the value of head, which is the same as var2: " var2 nl)
+    (* 2)
+    (print "After multiplying with 2, head is: " $  nl) // Head can also be referenced directly, this is done with $.
+
+    "And we can set head by simply leaving an expression about.."
+    (print) //prints that string
+    (print nl) // prints a newline
+}
+
+
+(print "
+===========================================================
+Conditional:
+ The ? function takes 1 to 3 arguments:
+    ( ? thenExpr ) // evaluates expression if head is not false.
+    ( ? condExpr thenExpr ) // evaluates expression if condExpr does not evaluate to false
+    ( ? condExpr thenExpr elseExpr) // evaluates thenExpr if condExpr does not evaluate to false, elseExpr if it does.
+
+ Functions:
+	sprint - Concatenate arguments into one string
+	print  - Prints to stdout, leaves head alone
+	read   - Reads line from stdin
+	+   - Adds rest to first
+	-   - Subtracts rest from first (- 2 1 ) is subtract 1 from 2, because then we can do ( - 10 5 4) means 10 - 5 - 4
+	*   - Multiply first by rest (* 4 3 2) = 4 * 3 * 2
+	/   - Divide first by rest (/ 16 2 2 2) = 16 / 2 / 2 / 2
+	=   - Compare rest to first, yields true if they all are equal, false if not
+	!   - Negate: if argument is not false it becomes false, if it is false it becomes true. - Takes only one argument
+	>   - Is greater: returns false if first is not greater than the rest (  > 4 3 2 1) = not false, ( > 4 3 4 ) = false, 4 is not greater than 4
+	<   - same as above, but lesser.
+	|   - or: Returns false if all arguments are false
+    For all functions, it is true that when the the function is provided with one less argument than is meaningful, the function uses head as the first argument.
+Loops:
+    There is no explicit loop function, instead, any imp function can loop.
+    An imp function restarts evaluation from the first argument if any expression in its body evaluates to the @ symbol.
+===========================================================
+")
+
+// Head-only while loop.
+0 // Put 0 on head
+{
+    (?
+        (< 5) //Check if head is less than 5
+        {   // If it is, do this stuff:
+            (print "Head is: " $ nl)
+            (+ 1) // Subtract 1 from head, leave value on head
+            @ // Leave loop token (loop token carries previous head to start of imp)
+        }
+        (print "Finally! DONE!" nl) // The else clause.
+    )
+
+}
+
+// For loop with variables, not doing anything with head
+i: 5
+max: 10
+{
+    (? (< i (+ max 1))
+    {
+        (print "For loop: " i " out of " max nl)
+        i:: (+ i 1)
+        @
+    })
+}
+
+
+(print "
+===========================================================
+Variables..
+    :  - name - create or overwrite variable in current scope.
+    :: - known name - overwrite variable in closest scope (can be same scope, but variable must exist)
+    :? - name query - Does variable exist ? (returns false if it does not)
+A variable name comes from the left side of :, :: or :? and can be either a literal identifier, a number, string.
+===========================================================
+")
+
+{
+    "varName" // Leave a string on head
+    : // names the variable from head
+    123 // value of this expression becomes value of variable.
+
+
+    (print "varName is: " varName nl)
+    "varName":123 // exactly the same as above
+
+    anotherVarName: "varName3" // Assign variable "anotherVarName" the value of "varName3"
+    (print "anotherVarName: " anotherVarName  nl)
+
+    anotherVarName : 234 // Assign variable (the value of anotherVarname, which is varName3) the value of 234, note the space.
+    (print "varName3: " varName3  nl)
+
+    // Oh, yeah, we can do it with functions too..
+    (sprint "a" "composed" "varname"): 999
+    (print "acomposedvarname: " acomposedvarname nl)
+
+    // We can dereference by name too:
+    (print "The variable anotherVarName holds the string: " anotherVarName nl)
+    (print "  and a variable named that holds: " (deref anotherVarName) nl)
+}
+
+// Lists, structures, functions, objects: tbd.

@@ -70,13 +70,44 @@
     #resetBtn:hover {
       background-color: #c9302c;
     }
-    #headOutput {
+    #helpBtn {
+      background: #0275d8;
+      color: white;
+      border: none;
       padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #helpBtn:hover {
+      background-color: #025aa5;
+    }
+    #headOutput {
       background: #2b2b2b;
       border-top: 1px solid #444;
       font-family: monospace;
       white-space: pre-wrap;
       color: #f0c674;
+      position: relative;
+    }
+    #helpPanel {
+      display: none;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #1e1e1e;
+      padding: 10px;
+      border-bottom: 1px solid #444;
+    }
+    .exampleBtn {
+      margin: 5px;
+      padding: 5px 10px;
+      background: #444;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .exampleBtn:hover {
+      background: #555;
     }
   </style>
 </head>
@@ -85,8 +116,18 @@
   <div id="buttonBar">
     <button id="runBtn">Run (Shift + Enter)</button>
     <button id="resetBtn">Reset engine</button>
+    <button id="helpBtn">Help</button>
   </div>
-  <div id="headOutput">$</div>
+  <div id="headOutput">
+    $
+  </div>
+  <div id="helpPanel">
+    <button class="exampleBtn" onclick="loadExample('samples/empty.slisp')">Empty</button>
+    <button class="exampleBtn" onclick="loadExample('samples/helloworld.slisp')">Hello World</button>
+    <button class="exampleBtn" onclick="loadExample('samples/fac.slisp')">Factorial</button>
+    <button class="exampleBtn" onclick="loadExample('samples/doc.slisp')">Documentation</button>
+  </div>
+
   <div id="container">
     <div id="editorWrapper">
       <textarea id="codeInput" spellcheck="false">(print "Hello world")</textarea>
@@ -110,25 +151,44 @@
     });
 
     let first = true;
-    let eng;
+
 
     function runCode() {
       if (first) {
         first = false;
         const SlispEngine = Module.StrOnlySlispEngine;
-        eng = new SlispEngine("repl.slisp");
+        window.eng = new SlispEngine("repl.slisp");
       }
       const code = editor.getValue();
-      eng.eval(code + " (print nl)");
-      document.getElementById("headOutput").textContent = "$ " + eng.getHeadStr();
+      window.eng.eval(code + " (print nl)");
+      document.getElementById("headOutput").textContent = "$ " + window.eng.getHeadStr();
+    }
+
+    async function loadExample(url) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to load example");
+        const code = await response.text();
+        editor.setValue(code);
+      } catch (err) {
+        console.error(err);
+        alert("Could not load example: " + err.message);
+      }
     }
 
     document.getElementById('runBtn').addEventListener('click', runCode);
 
     document.getElementById('resetBtn').addEventListener('click', () => {
-      eng.reset();
+      window.eng.reset();
       term.reset();
       document.getElementById("headOutput").textContent = "$";
+    });
+
+    const helpPanel = document.getElementById('helpPanel');
+    const headPanel = document.getElementById('headOutput');
+    helpPanel.style.display = 'none';
+    document.getElementById('helpBtn').addEventListener('click', () => {
+      helpPanel.style.display = helpPanel.style.display === 'none' ? 'block' : 'none';
     });
 
     editor.on('keydown', (cm, event) => {
