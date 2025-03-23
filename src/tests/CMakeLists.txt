@@ -20,14 +20,14 @@ target_link_libraries(${TEST_TARGET_NAME} PRIVATE
 set(UNIT_TEST ${TEST_TARGET_NAME})
 add_test(NAME ${UNIT_TEST} COMMAND ${UNIT_TEST})
 
+add_executable(engineOnly
+    test-stroengine.cpp
+)
 
-# add_custom_command(
-#      TARGET ${UNIT_TEST}
-#      COMMENT "Runing tests"
-#      POST_BUILD
-#      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-#      COMMAND ${TEST_TARGET_NAME} -s
-# )
+target_link_libraries(engineOnly PRIVATE
+    engine
+    Catch2::Catch2WithMain
+)
 
 
 include(Catch)

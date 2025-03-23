@@ -55,3 +55,23 @@ bool SlispEngine::eval(std::string prg)
 
     return ev;
 }
+
+StrOnlySlispEngine::StrOnlySlispEngine(std::string fn)
+{
+    engine.setFileName(fn);
+}
+
+std::string StrOnlySlispEngine::getHeadStr()
+{
+    return engine.head->toString();
+}
+
+bool StrOnlySlispEngine::eval(std::string prg)
+{
+    return engine.eval(prg);
+}
+
+void StrOnlySlispEngine::reset()
+{
+    engine.reset();
+}

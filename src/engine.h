@@ -25,4 +25,14 @@ public:
     bool eval(std::string prg);
 };
 
+class StrOnlySlispEngine {
+    private:
+    SlispEngine engine;
+    public:
+    StrOnlySlispEngine(std::string fn);
+    std::string getHeadStr();
+    bool eval(std::string prg);
+    void reset();
+};
+
 #endif

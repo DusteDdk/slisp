@@ -49,6 +49,9 @@
         "variant": "cpp",
         "__nullptr": "cpp",
         "__verbose_abort": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "stacktrace": "cpp",
+        "thread": "cpp",
+        "vector": "cpp"
     }
 }

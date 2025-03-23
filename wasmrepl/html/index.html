@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slisp REPL</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/monokai.min.css">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: sans-serif;
+    }
+    #header {
+      background: #222;
+      color: #fff;
+      padding: 10px;
+      font-size: 20px;
+      text-align: center;
+    }
+    #buttonBar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: #333;
+    }
+    #container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    #editorWrapper {
+      flex: 1;
+      display: flex;
+    }
+    .CodeMirror {
+      flex: 1;
+      height: 100%;
+      font-size: 14px;
+    }
+    #terminal {
+      flex: 1;
+      height: 100%;
+      background: black;
+    }
+    #runBtn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #runBtn:hover {
+      background-color: #45a049;
+    }
+    #resetBtn {
+      background: #d9534f;
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #resetBtn:hover {
+      background-color: #c9302c;
+    }
+    #headOutput {
+      padding: 10px;
+      background: #2b2b2b;
+      border-top: 1px solid #444;
+      font-family: monospace;
+      white-space: pre-wrap;
+      color: #f0c674;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">SLISP Repl</div>
+  <div id="buttonBar">
+    <button id="runBtn">Run (Shift + Enter)</button>
+    <button id="resetBtn">Reset engine</button>
+  </div>
+  <div id="headOutput">$</div>
+  <div id="container">
+    <div id="editorWrapper">
+      <textarea id="codeInput" spellcheck="false">(print "Hello world")</textarea>
+    </div>
+    <div id="terminal"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/commonlisp/commonlisp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/matchbrackets.min.js"></script>
+  <script>
+    const term = new Terminal({ convertEol: true });
+    term.open(document.getElementById('terminal'));
+    const codeInput = document.getElementById('codeInput');
+    const editor = CodeMirror.fromTextArea(codeInput, {
+      mode: 'commonlisp',
+      theme: 'monokai',
+      lineNumbers: true,
+      lineNumberFormatter: number => number,
+      matchBrackets: true
+    });
+
+    let first = true;
+    let eng;
+
+    function runCode() {
+      if (first) {
+        first = false;
+        const SlispEngine = Module.StrOnlySlispEngine;
+        eng = new SlispEngine("repl.slisp");
+      }
+      const code = editor.getValue();
+      eng.eval(code + " (print nl)");
+      document.getElementById("headOutput").textContent = "$ " + eng.getHeadStr();
+    }
+
+    document.getElementById('runBtn').addEventListener('click', runCode);
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      eng.reset();
+      term.reset();
+      document.getElementById("headOutput").textContent = "$";
+    });
+
+    editor.on('keydown', (cm, event) => {
+      if (event.key === 'Enter' && event.shiftKey) {
+        event.preventDefault();
+        runCode();
+      }
+    });
+  </script>
+  <script>
+    var Module = {
+      preRun: function() {
+        function stdout(asciiCode) {
+          const ch = String.fromCharCode(asciiCode);
+          if (ch == '\n') {
+            term.write('\r');
+          }
+          term.write(ch);
+        }
+        function stderr(asciiCode) {
+          const ch = String.fromCharCode(asciiCode);
+          if (ch == '\n') {
+            term.write('\r');
+          }
+          term.write(ch);
+        }
+        FS.init(null, stdout, stderr);
+      }
+    };
+  </script>
+  <script src="engineWASM.js"></script>
+</body>
+</html>
