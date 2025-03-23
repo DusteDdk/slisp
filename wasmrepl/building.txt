@@ -1,0 +1,7 @@
+To build the wasm stuff you need to source the environemnt for emscripten and whatnot (emdk activate blahbnlah)
+
+then:
+emcmake cmake -B build
+cd build 
+emmake make
+Then it's in htmlOut
