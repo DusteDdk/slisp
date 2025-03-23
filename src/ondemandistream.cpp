@@ -3,7 +3,7 @@
 
 #include <print>
 
-OnDemandStreamBuf::OnDemandStreamBuf(bool _useStdin): useStdIn(_useStdin) {
+OnDemandStreamBuf::OnDemandStreamBuf(bool _useStdin): std::streambuf(), useStdIn(_useStdin) {
     // We start with an empty buffer. Underflow/uflow will fetch.
     setg(nullptr, nullptr, nullptr);
 }
@@ -66,9 +66,7 @@ int OnDemandStreamBuf::underflow() {
 }
 
 
-OnDemandIStream::OnDemandIStream(): buf(false) {
-    rdbuf(&buf);
-}
+OnDemandIStream::OnDemandIStream(): std::istream(&buf), buf(false) {}
 
 void OnDemandIStream::setMidTokenIndicator(TokenProvider* top)
 {
@@ -89,8 +87,4 @@ void OnDemandIStream::reset()
 
 void OnDemandIStream::add(std::string cmd) {
     buf.add(cmd);
-}
-
-void OnDemandIStream::addLine(std::string cmd) {
-    buf.add(cmd + "\n");
 }

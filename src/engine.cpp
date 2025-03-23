@@ -39,7 +39,7 @@ bool SlispEngine::eval(std::string prg)
 
     top.reset(fileName);
     input.reset();
-    input.addLine(prg);
+    input.add(prg);
 
     bool ev = false;;
     while(top.advance() && top.nxtToken.token != Token::Eof ) {

@@ -34,7 +34,6 @@ public:
     void setStdInEnabled(bool useStdIn);
     void reset();
     void add(std::string cmd);
-    void addLine(std::string cmd);
 };
 
 

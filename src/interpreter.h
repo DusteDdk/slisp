@@ -5,6 +5,7 @@
 #include "parsey.h"
 #include "fundamental.h"
 #include "scopey.h"
+#include "lfunctions.h"
 
 class Interpreter {
 private:
@@ -16,6 +17,7 @@ public:
 	ScopeCreep scopey;
 	void run(NodeRef program);
 	FundamentalRef descend(NodeRef n, FundamentalRef h, bool loopTokenValid = false);
+	void addFunc(std::string name, LFuncRef fun);
 };
 
 #endif
