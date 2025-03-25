@@ -6,5 +6,4 @@ TEST_CASE( "StrOnlyEngine" ) {
 
         REQUIRE( e.eval("(+ 1 2)") );
         REQUIRE( e.getHeadStr() == "3.000000" );
-        REQUIRE( false);
 }

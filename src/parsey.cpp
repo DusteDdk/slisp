@@ -67,7 +67,9 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 		return setNodeInfo(ti, mkNode<NodeIdent>(ti.str));
 	case Token::Number:
 	{
-		char* end{};
+		// Todo: note that it seems like failed parsing here does not float to top in (+ 1 2) if 2 failed to parse.
+		char* end;
+		errno=0; // Oh my.. remember to clear errorno..
 		long double num = std::strtold(ti.str.c_str(), &end);
 		if (*end != 0 || errno != 0) {
 			return setNodeInfo(ti, mkNode<NodeErr>(std::format("ParserError: Failed to parse number '{}'", ti.str)));

@@ -20,10 +20,10 @@ enum class BlockReason : int_fast8_t {
 std::string BlockReasonStr (BlockReason r);
 
 struct TokenInfo {
-	Token token;
-	std::string str;
-	std::string file;
-	int line, column;
+	Token token=Token::NoOP;
+	std::string str="";
+	std::string file="";
+	int line=0, column=0;
 };
 class Toker {
 	std::istream& in;
@@ -34,8 +34,9 @@ class Toker {
 	int cline, ccolumn;
 	int pline, pcolumn;
 	TokenInfo eof;
-	std::string acc="";
-	std::string fileName="";
+	std::string acc;
+	std::string fileName;
+	int getCCalls=0;
 
 	bool dontConsumeChar=false;
 	TokenInfo token(Token t);

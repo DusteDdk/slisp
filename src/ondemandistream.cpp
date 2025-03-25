@@ -14,7 +14,7 @@ void OnDemandStreamBuf::add(std::string cmd) {
 }
 
 void OnDemandStreamBuf::reset() {
-    std::queue<std::string> empty;
+    std::queue<std::string> empty{};
     buffer_ = "";
     std::swap( cmds, empty );
 }
@@ -37,7 +37,7 @@ int OnDemandStreamBuf::underflow() {
     } else if(useStdIn && std::cin) {
 
 
-        if(top->getBlockReason() != BlockReason::Waiting) {
+        if(top->getBlockReason() != BlockReason::Unblocked) {
             std::print("{} ", BlockReasonStr(top->getBlockReason()));
         }
         std::print("~ ");

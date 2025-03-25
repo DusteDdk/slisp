@@ -21,6 +21,7 @@ void Toker::reset(std::string fname)
 	pcolumn = 0;
 	ccolumn = 0;
 	fileName=fname;
+	acc=std::string("");
 
 	eof.token=Token::Eof;
 	eof.line=cline;
@@ -55,6 +56,7 @@ TokenInfo Toker::token(Token t)
 
 bool Toker::getC() {
 
+	getCCalls++;
 	if( in.eof() ) {
 		return false;
 	}
@@ -69,13 +71,14 @@ bool Toker::getC() {
 		}
 	}
 
-	char realC;
-	bool retVal = !!in.get(realC);
+
+	bool retVal = !!in.get(c);
 
 	if(!retVal) {
 		return false;
 	}
-	c = realC;
+
+
 
 	isUnic=false;
 	unic = "";
@@ -121,8 +124,6 @@ bool Toker::getC() {
 }
 
 
-
-
 bool shouldEmitIdent(char c) {
 	if(isspace(c)) {
 		return true;
@@ -156,7 +157,6 @@ TokenInfo Toker::nextToken() {
 	pcolumn=ccolumn;
 
 
-	blockReason=BlockReason::Waiting;
 	while ( dontConsumeChar || getC()) {
 
 		if( acc.length() && shouldEmitIdent(c) ) {
@@ -287,6 +287,8 @@ TokenInfo Toker::nextToken() {
 		bool hasDigit=isdigit(c);
 		if ( !acc.length() && ( hasDot || isNegative || hasDigit) ) {
 
+
+
 			acc = c;
 			blockReason=BlockReason::Number;
 			while( getC() ) {
@@ -378,6 +380,7 @@ void TokenProvider::reset(std::string& fname) {
 bool TokenProvider::advance()
 {
 	if(curToken.token == Token::Eof) {
+		std::println("TokenProvider::Advance: EOF");
 		return false;
 	}
 
@@ -389,13 +392,12 @@ bool TokenProvider::advance()
 
 bool TokenProvider::advanceSkipNoOp()
 {
-	while(advance()) {
-		if(curToken.token != Token::NoOP && curToken.token != Token::Eof) {
-			return true;
-		}
-	}
+	bool retVal = false;
+	do {
+		retVal = advance();
+	} while(curToken.token == Token::NoOP);
 
-	return false;
+	return retVal;
 }
 
 BlockReason TokenProvider::getBlockReason()
