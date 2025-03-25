@@ -21,7 +21,7 @@ jobs:
     - name: make
       run: cmake --build build
     - name: Test 1
-      run: valgrind --leak-check=full -s ./build/bin/tests
+      run: valgrind  --leak-check=full --show-leak-kinds=all ./build/bin/tests
     - name: Test 2
       run: valgrind ./build/bin/engineOnly
 
