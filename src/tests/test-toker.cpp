@@ -44,8 +44,8 @@ istringstream tokerTestStream(R"TOKER_TEST_STR({
 })TOKER_TEST_STR");
 
 TEST_CASE( "TokenProvider" ) {
-
-    TokenProvider tokpro(tokerTestStream, "test.slisp");
+    std::string testFn("toktest.slisp");
+    TokenProvider tokpro(tokerTestStream, testFn);
     while( tokpro.advance() ) {
         println("{}", TokInfoStr(tokpro.curToken));
     }

@@ -6,9 +6,9 @@ using namespace std;
 
 
 
-Toker::Toker(std::istream &inStream) : in(inStream)
+Toker::Toker(std::istream &inStream, std::string& fname) : in(inStream)
 {
-    reset("<?>");
+    reset(fname);
 }
 
 
@@ -21,6 +21,13 @@ void Toker::reset(std::string fname)
 	pcolumn = 0;
 	ccolumn = 0;
 	fileName=fname;
+
+	eof.token=Token::Eof;
+	eof.line=cline;
+	eof.column=ccolumn;
+	eof.str="";
+	eof.file=fileName;
+
 }
 
 
@@ -62,7 +69,13 @@ bool Toker::getC() {
 		}
 	}
 
-	bool retVal = !!in.get(c);
+	char realC;
+	bool retVal = !!in.get(realC);
+
+	if(!retVal) {
+		return false;
+	}
+	c = realC;
 
 	isUnic=false;
 	unic = "";
@@ -343,11 +356,11 @@ std::string TokInfoStr(TokenInfo& t) {
 }
 
 
-TokenProvider::TokenProvider(std::istream &inStream, std::string fname): toker(inStream) {
+TokenProvider::TokenProvider(std::istream &inStream, std::string& fname): toker(inStream, fname) {
 	reset(fname);
 }
 
-void TokenProvider::reset(std::string fname) {
+void TokenProvider::reset(std::string& fname) {
 	toker.reset(fname);
 	curToken.column=0;
 	curToken.line=0;
@@ -376,12 +389,13 @@ bool TokenProvider::advance()
 
 bool TokenProvider::advanceSkipNoOp()
 {
-	bool more = false;
-	do {
-		more = advance();
+	while(advance()) {
+		if(curToken.token != Token::NoOP && curToken.token != Token::Eof) {
+			return true;
+		}
 	}
-	while(curToken.token == Token::NoOP);
-	return more;
+
+	return false;
 }
 
 BlockReason TokenProvider::getBlockReason()

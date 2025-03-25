@@ -35,7 +35,7 @@ class Toker {
 	int pline, pcolumn;
 	TokenInfo eof;
 	std::string acc="";
-	std::string fileName;
+	std::string fileName="";
 
 	bool dontConsumeChar=false;
 	TokenInfo token(Token t);
@@ -43,7 +43,7 @@ class Toker {
 
 
 	public:
-	Toker(std::istream& inStream);
+	Toker(std::istream& inStream, std::string& fname);
 	void reset(std::string fname);
 
 	BlockReason blockReason;
@@ -54,16 +54,16 @@ class Toker {
 std::string TokInfoStr(TokenInfo& t);
 
 class TokenProvider {
-	private:
-	Toker toker;
-	public:
-		TokenProvider(std::istream& inStream, std::string fname);
-		bool advance();
-		bool advanceSkipNoOp();
-		BlockReason getBlockReason();
-		void reset(std::string fname);
-		TokenInfo curToken;
-		TokenInfo nxtToken;
+private:
+    Toker toker;
+public:
+    TokenProvider(std::istream& inStream, std::string& fname);
+    bool advance();
+    bool advanceSkipNoOp();
+    BlockReason getBlockReason();
+    void reset(std::string& fname);
+    TokenInfo curToken;
+    TokenInfo nxtToken;
 };
 
 #endif

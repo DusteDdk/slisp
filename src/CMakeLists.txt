@@ -18,9 +18,6 @@ add_library(inter STATIC interpreter.h interpreter.cpp scopey.cpp)
 target_link_libraries(inter PRIVATE fundamental sdlfuncs ${SDL2_LIBRARIES})
 
 
-
-
-
 add_library(engine STATIC engine.cpp)
 target_link_libraries(engine PRIVATE
 	ondemandistream
@@ -41,7 +38,6 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 	parsey
 	inter
 )
-
 
 
 add_subdirectory(tests)

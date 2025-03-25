@@ -52,6 +52,26 @@
         "execution": "cpp",
         "stacktrace": "cpp",
         "thread": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "clocale": "cpp",
+        "cstdarg": "cpp",
+        "ctime": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "unordered_map": "cpp",
+        "ratio": "cpp",
+        "system_error": "cpp",
+        "iostream": "cpp",
+        "istream": "cpp",
+        "mutex": "cpp",
+        "span": "cpp",
+        "streambuf": "cpp",
+        "__bit_reference": "cpp",
+        "__node_handle": "cpp",
+        "__split_buffer": "cpp",
+        "__tree": "cpp",
+        "ios": "cpp",
+        "locale": "cpp"
     }
 }

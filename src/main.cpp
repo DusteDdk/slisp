@@ -25,8 +25,9 @@ int main(int argc, char* argv[]) {
 
 	}
 	else {
-		std::ifstream ifs(argv[1], std::ifstream::in);
-		TokenProvider top(ifs, argv[1]);
+		std::string fName(argv[1]);
+		std::ifstream ifs(fName, std::ifstream::in);
+		TokenProvider top(ifs, fName);
 		Parsey p(top);
 
 		Interpreter i;

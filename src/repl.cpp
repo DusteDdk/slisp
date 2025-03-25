@@ -34,7 +34,8 @@ void Repl::enter()
 {
     OnDemandIStream input;
     input.setStdInEnabled(true);
-    TokenProvider top(input, "stdin");
+    std::string stdinFn("stdin");
+    TokenProvider top(input, stdinFn);
     input.setMidTokenIndicator(&top);
 	Parsey parsey(top);
 	NodeRef node;

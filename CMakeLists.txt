@@ -8,7 +8,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES 0)
 
 if(UNIX)
     set(CMAKE_CXX_COMPILER             "/usr/bin/clang++-19")
-    set(CMAKE_CXX_FLAGS                "-Wall -std=c++23")
+    set(CMAKE_CXX_FLAGS                "-Wall -std=c++23 -g")
     set(CMAKE_CXX_FLAGS_DEBUG          "-g")
     set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
     set(CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG")
