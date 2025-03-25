@@ -435,6 +435,7 @@ public:
 };
 
 
+// Todo, when slisp gets a way to declare functions, we should register our own functions using that, rather than the.. three? different ways we have here
 FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRef h) {
 
 	if (call->name == "imp") {
@@ -521,6 +522,11 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 		for (NodeRef arg : call->args)
 		{
 			auto val = descend(arg,h);
+
+			// Todo, if the value is a variableDecl, it's a named variable, don't add it to list..
+			// or consider whether this should be the parsers job ? it could treat variable decl nodes in call bodies special,
+			// YES! That's much nicer!
+
 			if (val->t == FType::Error) {
 				return val;
 			}
@@ -564,7 +570,7 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 
 		return wrapPotentialErr( scopey.read(ident->str), ident);
 	}
-	case NodeType::Variable:
+	case NodeType::Variable: // Consider if we can emit info on the variable name too here somehow? (consider how much effort its worth and how it blends into the idea of the fundamental objects, or wheter nodes will become that eventually)
 	{
 		auto varNode = std::dynamic_pointer_cast<NodeVariable>(n);
 
