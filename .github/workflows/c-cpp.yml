@@ -10,13 +10,13 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    container: llvmclang/clang:latest  # Clang preinstalled
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Install dependencies
-      run: sudo apt update && sudo apt install -y clang-19 libclang-19-dev libclang-common-19-dev libclang-cpp19 libclang-cpp19-dev libsdl2-2.0-0 libsdl2-dev libc++-19-dev
+      run: sudo apt update && sudo apt install -y libsdl2-2.0-0 libsdl2-dev catch2
     
     - name: configure
       run: cmake -B build
