@@ -1,7 +1,10 @@
 #ifndef INTERPRETER_H_INCLUDED
 #define INTERPRETER_H_INCLUDED
+#include <string>
 #include <memory>
 #include <vector>
+#include <map>
+
 #include "parsey.h"
 #include "fundamental.h"
 #include "scopey.h"
@@ -9,7 +12,7 @@
 
 class Interpreter {
 private:
-	std::vector<std::shared_ptr<FundamentalVariableDefinition>> varsWaitingForValue;
+	std::map<std::string, LFuncRef> calls;
 
 public:
 	Interpreter();

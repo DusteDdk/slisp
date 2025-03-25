@@ -1,13 +1,11 @@
 #include <print>
 #include <string>
 #include <format>
-#include <map>
 #include <iostream>
 #include <stdio.h>
 
-#include "interpreter.h"
-#include "lfunctions.h"
 #include "sdlfuncs.h"
+#include "interpreter.h"
 
 FundamentalRef mkErr(std::string str, NodeRef n) {
 	std::string msg = std::format("{}: Interpretation error: {}", TokInfoStr(n->origin), str);
@@ -22,9 +20,6 @@ FundamentalRef wrapPotentialErr(FundamentalRef ft, NodeRef n) {
 	return ft;
 }
 
-
-
-static std::map<std::string, LFuncRef> calls{};
 
 class LFsprint : public LFunc {
 public:
