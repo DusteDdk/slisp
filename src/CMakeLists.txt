@@ -1,5 +1,8 @@
 set(TARGET_NAME slisp)
 
+add_library(node STATIC node.cpp)
+add_library(bob STATIC bob.cpp)
+
 add_library(ondemandistream STATIC ondemandistream.cpp)
 
 add_library(fundamental STATIC fundamental.cpp)
@@ -7,7 +10,7 @@ add_library(fundamental STATIC fundamental.cpp)
 add_library(toker STATIC toker.h toker.cpp token.cpp)
 
 add_library(parsey STATIC parsey.h parsey.cpp)
-target_link_libraries(parsey PRIVATE toker)
+target_link_libraries(parsey PRIVATE toker node bob)
 
 
 find_package(SDL2 REQUIRED)

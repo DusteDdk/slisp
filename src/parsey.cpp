@@ -4,25 +4,10 @@
 #include "token.h"
 #include "parsey.h"
 
-std::string Node::toString() {
-	return std::format("::Node(Type{})::", (int)t);
-}
 
-std::string NodeErr::toString() {
-	return std::format("{} {}", TokInfoStr(origin), str);
-}
-
-template<class T, class U>
-std::shared_ptr<T> mkNode(U&& u) {
-	auto node =std::make_shared<T>(std::forward<U>(u));
-	return node;
-}
 
 NodeRef Parsey::setNodeInfo(TokenInfo& ti, NodeRef node) {
 	node->origin = ti;
-/*	node->prevNode = prevNode;
-	prevNode->nextNode=node;
-	prevNode=node;*/
 	return node;
 }
 
