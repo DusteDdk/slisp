@@ -14,6 +14,7 @@ file(MAKE_DIRECTORY ${OUTPUT_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR})
 
 add_executable(engineWASM
+    ../src/node.cpp
     ../src/engine.cpp
     ../src/ondemandistream.cpp
     ../src/toker.cpp
