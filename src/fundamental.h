@@ -5,6 +5,8 @@
 #include <memory>
 #include <string>
 
+#include "node.h"
+
 enum class FType : int_fast8_t {
 	List=1,
 	Number,
@@ -15,6 +17,7 @@ enum class FType : int_fast8_t {
 	True,
 	False,
 	Variable,
+	Expression,
 };
 
 class Fundamental;
@@ -43,6 +46,12 @@ public:
 };
 
 
+class FundamentalExpr : public Fundamental {
+	public:
+	std::shared_ptr<NodeCall> exprCall;
+	FundamentalExpr(std::shared_ptr<NodeCall> call);
+	std::string toString() override;
+};
 class FundamentalTrue : public Fundamental {
 public:
 	FundamentalRef v;

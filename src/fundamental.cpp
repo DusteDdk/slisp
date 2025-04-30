@@ -82,3 +82,8 @@ FundamentalError::FundamentalError(std::string txt) : FundamentalString(txt) { t
 std::string FundamentalError::toString() {
     return s;
 }
+
+FundamentalExpr::FundamentalExpr(std::shared_ptr<NodeCall> call): Fundamental(FType::Expression), exprCall(call) {}
+std::string FundamentalExpr::toString() {
+    return std::format("Expression '{}' with {} arguments", exprCall->name, exprCall->args.size());
+}

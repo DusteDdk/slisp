@@ -434,6 +434,7 @@ public:
 FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRef h) {
 
 	if (call->name == "imp") {
+
 		FundamentalRef res = h;
 		for(size_t i = 0; i < call->args.size(); i++) {
 			NodeRef arg = call->args[i];
@@ -454,6 +455,7 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 		}
 		return res;
 	}
+
 
 
 	// Rather than using an identifier name, look up the variable contained in the identifier
@@ -507,7 +509,12 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 
 
 	if(scopey.has(call->name)) {
-		return wrapPotentialErr( scopey.read(call->name), call );
+		auto retVal = wrapPotentialErr( scopey.read(call->name), call );
+		if(retVal->t == FType::Expression) {
+			auto fExpr = std::dynamic_pointer_cast<FundamentalExpr>(retVal);
+			return doCall(fExpr->exprCall, h);
+		}
+		return retVal;
 	}
 
 	LFuncRef fun = calls[call->name];
@@ -533,15 +540,34 @@ FundamentalRef Interpreter::doCall(std::shared_ptr<NodeCall> call, FundamentalRe
 	return mkErr(std::format("ERROR: Function not found '{}'", call->name), call);
 }
 
+
+FundamentalRef Interpreter::mkFundamentalExpr(std::shared_ptr<NodeCall> call, FundamentalRef h)
+{
+	auto expr = std::make_shared<FundamentalExpr>(call);
+	return expr;
+}
+
+
 FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenValid) {
 	switch (n->t)
 	{
 	case NodeType::Call: {
 		auto call = std::dynamic_pointer_cast<NodeCall>(n);
+		FundamentalRef retVal;
 		scopey.enterScope(call->name);
-		auto callRet = doCall(call, h);
+		switch(call->perspect) {
+			case NodePerspective::Val:
+				retVal = doCall(call, h);
+				break;
+			case NodePerspective::Expr:
+				retVal = mkFundamentalExpr(call, h);
+				break;
+			default:
+				retVal = mkErr(std::format("ERROR: Expected node perspect to be either Val or Expr"), n);
+				break;
+		}
 		scopey.exitScope();
-		return callRet;
+		return retVal;
 	}
 	case NodeType::String: {
 		auto str = std::dynamic_pointer_cast<NodeStr>(n);
@@ -562,7 +588,6 @@ FundamentalRef Interpreter::descend(NodeRef n, FundamentalRef h, bool loopTokenV
 		if (ident->str == "nl") {
 			return std::make_shared<FundamentalString>("\n");
 		}
-
 		return wrapPotentialErr( scopey.read(ident->str), ident);
 	}
 	case NodeType::Variable: // Consider if we can emit info on the variable name too here somehow? (consider how much effort its worth and how it blends into the idea of the fundamental objects, or wheter nodes will become that eventually)
@@ -651,3 +676,4 @@ void Interpreter::run(NodeRef program)
 	FundamentalRef r = descend(program, head);
 	std::println("");
 }
+

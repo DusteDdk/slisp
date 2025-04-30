@@ -70,12 +70,26 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 		}
 		return setNodeInfo(ti, mkNode<Node>(NodeType::Loop));
 	}
+	case Token::Expr:
+	{
+		if(top.nxtToken.token == Token::Eof) {
+			return setNodeInfo(ti, mkNode<NodeErr>(std::format("Syntax error: Unexpected EOF after #")));
+		}
+
+		top.advanceSkipNoOp();
+		NodeRef exprNode = parse(top.curToken, ++level);
+		exprNode->perspect = NodePerspective::Expr;
+		return exprNode;
+
+
+	}
 	case Token::Begin:
 	{
 		auto callNode = std::make_shared<NodeCall>();
 		top.advanceSkipNoOp();
 		if (top.curToken.token != Token::Identifier) {
 			//TODO: Just descend instead to support dynamically selecting call by calling a function that determines the name?
+			// In other words: Support that the next node being an expression that identifies the name of the call to make.
 			return setNodeInfo(ti, mkNode<NodeErr>(std::format("Syntax error: Expected Identifer, got {}", tokName(top.curToken.token))));
 		}
 		callNode->ident = std::make_unique<NodeIdent>(top.curToken.str);

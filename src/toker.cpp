@@ -199,6 +199,9 @@ TokenInfo Toker::nextToken() {
 		case '@':
 			return token(Token::Loop);
 
+		case '#':
+			return token(Token::Expr);
+
 		//Possibly a comment.
 		case '/':
 		case '*':

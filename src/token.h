@@ -5,6 +5,7 @@
 
 enum class Token : int_fast8_t {
 	Loop=1,
+	Expr,
 	Identifier,
 	Number,
 	String,

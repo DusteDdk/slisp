@@ -72,6 +72,10 @@
         "__split_buffer": "cpp",
         "__tree": "cpp",
         "ios": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "__functional_base": "cpp",
+        "ranges": "cpp",
+        "__hash_table": "cpp",
+        "set": "cpp"
     }
 }

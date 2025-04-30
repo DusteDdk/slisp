@@ -19,10 +19,16 @@ enum class NodeType : int_fast8_t {
 	Variable
 };
 
+enum class NodePerspective : int_fast8_t {
+	Val=1,
+	Expr,
+};
+
 struct Node {
 	NodeType t;
-	Node() : t(NodeType::Base) {};
-	Node(NodeType type) : t(type) {};
+	NodePerspective perspect;
+	Node() : t(NodeType::Base), perspect(NodePerspective::Val) {};
+	Node(NodeType type) : t(type), perspect(NodePerspective::Val) {};
 	virtual ~Node() = default;
 	virtual std::string toString();
 	TokenInfo origin;
@@ -49,8 +55,9 @@ struct NodeIdent : public Node {
 };
 
 struct NodeCall: public Node {
-	NodeCall() : Node(NodeType::Call), name("::invalid_fname::") {}
-	NodeCall(std::string fName) : Node(NodeType::Call), name(fName) {}
+	NodeCall() : Node(NodeType::Call), inert(false), name("::invalid_fname::"){}
+	NodeCall(std::string fName) : Node(NodeType::Call), inert(false), name(fName) {}
+	bool inert;
 	std::string name;
 	std::unique_ptr<NodeIdent> ident;
 	std::vector<std::shared_ptr<Node>> args;

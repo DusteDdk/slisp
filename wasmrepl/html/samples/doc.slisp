@@ -156,4 +156,27 @@ A variable name comes from the left side of :, :: or :? and can be either a lite
     (print "  and a variable named that holds: " (deref anotherVarName) nl)
 }
 
+// Perspect(ives): Unless otherwise specified, everything is in "Value" perspective,
+// so evaluating it yields the value of the expression
+// Adding # in in front of an expression yields the expression itself rather than the value.
+// Similar to "quote" in LISP, but hopefully in the future more general.
+{
+    greeter: #{
+        (print "Who are you? ")
+        (read)
+        (print nl"Hello " $ ", welcome, stay awhile and listen..." nl)
+    }
+
+    (greeter)
+
+    sum: #{
+        (+ a b c)
+    }
+
+    a: 1
+    b: 2
+    c: 3
+    (print "The sum is: " (sum) nl)
+}
+
 // Lists, structures, functions, objects: tbd.

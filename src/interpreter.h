@@ -19,6 +19,7 @@ public:
 	FundamentalRef doCall(std::shared_ptr<NodeCall> call, FundamentalRef h);
 	ScopeCreep scopey;
 	void run(NodeRef program);
+	FundamentalRef mkFundamentalExpr(std::shared_ptr<NodeCall> call, FundamentalRef h);
 	FundamentalRef descend(NodeRef n, FundamentalRef h, bool loopTokenValid = false);
 	void addFunc(std::string name, LFuncRef fun);
 };

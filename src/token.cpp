@@ -6,6 +6,8 @@ std::string tokName(Token t) {
 	switch (t) {
 	case Token::Loop:
 		return "Token::Loop";
+	case Token::Expr:
+		return "Token::Expr";
 	case Token::Identifier:
 		return "Token::Identifier";
 	case Token::Number:

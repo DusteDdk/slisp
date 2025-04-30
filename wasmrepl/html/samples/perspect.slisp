@@ -1,0 +1,43 @@
+// I didn't really want recursion, but it's there if you abuse the scoping rules..
+// Might change that if/when I unify nodes and values.
+
+{
+    depth: 0
+
+    factorial: #{
+        depth:: (+ depth 1)
+        (? (= 0 num)
+            1
+            {
+                v: num
+                num: (- num 1)
+                (* v (factorial))
+            })}
+
+
+    fib: #{
+        depth:: (+ depth 1)
+        //(print "Fib, num: " num nl)
+        (? (< num 2)
+        {
+            //(print "Returns: " num nl) 
+            num
+        }
+            {
+                v: num
+                num: (- v 1)
+                a: (fib)
+                num: (- v 2)
+                b: (fib)
+                (+ a b)
+            })}
+
+
+
+    (print "Factorial of 10 is " { num: 10 (factorial) } " (recursed " depth " times)." nl)
+
+    depth: 0
+    num: 16 // yes it's too slow to do large numbers right now..
+    (print "Fib of " num " is " (fib) " (recursed " depth " times)." nl)
+}
+
