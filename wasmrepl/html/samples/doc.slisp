@@ -1,3 +1,5 @@
+{
+
 /* It supports comment,
     /* even nested ones */
     // and single-line ones
@@ -180,3 +182,4 @@ A variable name comes from the left side of :, :: or :? and can be either a lite
 }
 
 // Lists, structures, functions, objects: tbd.
+}
