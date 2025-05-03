@@ -27,11 +27,12 @@ enum class NodePerspective : int_fast8_t {
 struct Node {
 	NodeType t;
 	NodePerspective perspect;
-	Node() : t(NodeType::Base), perspect(NodePerspective::Val) {};
-	Node(NodeType type) : t(type), perspect(NodePerspective::Val) {};
+	Node();
+	Node(NodeType type);
 	virtual ~Node() = default;
 	virtual std::string toString();
 	TokenInfo origin;
+	int id;
 };
 
 using NodeRef = std::shared_ptr<Node>;
@@ -40,18 +41,21 @@ struct NodeNum : public Node {
 	NodeNum() : Node(NodeType::Number), num(0) {}
 	NodeNum(long double num) : Node(NodeType::Number), num(num) {}
 	long double num;
+	std::string toString();
 };
 
 struct NodeStr : public Node {
 	NodeStr() : Node(NodeType::String), str("") {}
 	NodeStr(std::string str) : Node(NodeType::String), str(str) {}
 	std::string str;
+	std::string toString();
 };
 
 
 struct NodeIdent : public Node {
 	NodeIdent(std::string _str) : Node(NodeType::Ident), str(_str) {}
 	std::string str;
+	std::string toString();
 };
 
 struct NodeCall: public Node {
@@ -59,8 +63,9 @@ struct NodeCall: public Node {
 	NodeCall(std::string fName) : Node(NodeType::Call), inert(false), name(fName) {}
 	bool inert;
 	std::string name;
-	std::unique_ptr<NodeIdent> ident;
+	std::unique_ptr<NodeIdent> ident; // Todo: Explain this better
 	std::vector<std::shared_ptr<Node>> args;
+	std::string toString();
 };
 
 struct NodeVariable: public Node {
@@ -69,7 +74,7 @@ struct NodeVariable: public Node {
 	bool nameFromHead = false;
 	NodeVariable() : Node(NodeType::Variable) {}
 	std::string name;
-	std::string toString() { return std::format("::Create Variable{}>::", name); };
+	std::string toString();
 	NodeRef valProvider;
 };
 

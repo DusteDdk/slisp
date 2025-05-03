@@ -355,7 +355,12 @@ std::string BlockReasonStr (BlockReason r) {
 
 std::string TokInfoStr(TokenInfo& t) {
 	if(t.str.length()) {
-		return std::format("{}<{}> @ {}:{}:{}",tokName(t.token), t.str.substr(0,4), t.file, t.line, t.column);
+		std::string shorName = t.str;
+		if(t.str.length() > 6) {
+			shorName = shorName.substr(0, 5) + "…";
+		}
+
+		return std::format("{}<{}> @ {}:{}:{}",tokName(t.token), shorName, t.file, t.line, t.column);
 	}
 	return std::format("{} @ {}:{}:{}",tokName(t.token), t.file, t.line, t.column);
 }

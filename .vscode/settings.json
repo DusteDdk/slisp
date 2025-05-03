@@ -76,6 +76,7 @@
         "__functional_base": "cpp",
         "ranges": "cpp",
         "__hash_table": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "*.inc": "cpp"
     }
 }

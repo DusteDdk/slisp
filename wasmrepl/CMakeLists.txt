@@ -26,10 +26,15 @@ add_executable(engineWASM
     src/emsBindings.cpp
 )
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
+  -sINITIAL_MEMORY=33554432 \
+  -sMAXIMUM_MEMORY=2147483648 \
+  -sALLOW_MEMORY_GROWTH=1")
+
 target_link_options(engineWASM PRIVATE
     "-s WASM=1"
     "-s MODULARIZE=1"
-    "-s ALLOW_MEMORY_GROWTH=1"
+    "-O3"
     "-s EXPORTED_RUNTIME_METHODS=['ccall','cwrap']"
     "--bind"
     "-o ${OUTPUT_DIR}/engineWASM.js"

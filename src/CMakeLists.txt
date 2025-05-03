@@ -42,6 +42,10 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 	inter
 )
 
+add_executable(toDot dot.cpp)
+target_link_libraries(toDot PRIVATE
+	parsey
+)
 
 add_subdirectory(tests)
 
