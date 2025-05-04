@@ -16,6 +16,76 @@
 #include <filesystem>
 using namespace std;
 
+
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <iostream>
+
+std::string runDot(const std::string& dotInput) {
+    int inPipe[2];  // parent writes to [1], child reads from [0]
+    int outPipe[2]; // child writes to [1], parent reads from [0]
+
+    if (pipe(inPipe) != 0 || pipe(outPipe) != 0) {
+        perror("pipe");
+        return "";
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        return "";
+    }
+
+    if (pid == 0) {
+        // --- Child process ---
+
+        // Redirect stdin
+        dup2(inPipe[0], STDIN_FILENO);
+        close(inPipe[0]);
+        close(inPipe[1]); // parent’s write end
+
+        // Redirect stdout
+        dup2(outPipe[1], STDOUT_FILENO);
+        close(outPipe[1]);
+        close(outPipe[0]); // parent’s read end
+
+        execlp("dot", "dot", "-Tsvg", "-Gid=slsvg", nullptr);
+
+        // If execlp fails
+        perror("execlp");
+        _exit(1);
+    }
+
+    // --- Parent process ---
+
+    // Close unused ends
+    close(inPipe[0]);  // parent doesn't read from inPipe
+    close(outPipe[1]); // parent doesn't write to outPipe
+
+    // Write DOT input to child
+    write(inPipe[1], dotInput.c_str(), dotInput.size());
+    close(inPipe[1]); // done writing
+
+    // Read output from child
+    std::stringstream output;
+    char buffer[4096];
+    ssize_t bytes;
+    while ((bytes = read(outPipe[0], buffer, sizeof(buffer))) > 0) {
+        output.write(buffer, bytes);
+    }
+    close(outPipe[0]);
+
+    // Wait for child to finish
+    int status;
+    waitpid(pid, &status, 0);
+
+    return output.str();
+}
+
 vector<string> json;
 
 string nodeToDot(NodeRef node, int level, int parentId)
@@ -157,13 +227,10 @@ int main(int argc, char* argv[]) {
     }
     jsonStr += "\n};\n";
 
-    println("<html><head><title>explore {}</title></head><body>", argv[1]);
+    string htmlStart = format("<html><head><title>explore {}</title></head><body>", argv[1]);
 
-    FILE* pipe = popen("dot -Tsvg  -Gid=\"slsvg\"", "w"); // Send output to Graphviz
-    if (pipe) {
-        fprintf(pipe, "%s\n", dotGraph.c_str() );
-        fclose(pipe);
-    }
+    string svgSrc = runDot(dotGraph);
+
 
     auto script = R"(
     window.onload = () => {
@@ -266,19 +333,17 @@ function highlightPreLine(preId, lineNumber) {
     pre.appendChild(span);
   });
 }
-
-
-
-    };
-    )";
+};
+)";
 
 
     auto size = std::filesystem::file_size(argv[1]);
-    std::string content(size, '\0');
+    std::string slSrc(size, '\0');
     std::ifstream in(argv[1]);
-    in.read(&content[0], size);
+    in.read(&slSrc[0], size);
 
-    println("<pre id=\"code\">{}</pre><div id=\"debug\" style=\"border: 1px solid black;\"></div><script>{}{}</script></body></html>",content, jsonStr, script);
+
+    println("{}{}<pre id=\"code\">{}</pre><div id=\"debug\" style=\"border: 1px solid black;\"></div><script>{}{}</script></body></html>",htmlStart,svgSrc, slSrc, jsonStr, script);
 
 	return 0;
 }
