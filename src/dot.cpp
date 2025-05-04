@@ -124,13 +124,17 @@ string nodeToDot(NodeRef node, int level, int parentId)
                 prev=cur;
                 cur=cn->id;
 
-                if(prev) {
+                if(prev && call->args.size() > 1) {
                     ret+=format("{} -> {} [color=indigo];\n", prev, cur); // Control flow
                 }
             }
 
-            ret += format("{} -> {} [color=green];\n}}\n", cur, node->id); // Data flow
-
+            if(call->args.size() > 1) {
+                ret += format("{} -> {} [color=green];\n", cur, node->id); // Data flow
+            } else if(call->args.size() == 1) {
+                ret += format("{} -> {} [dir=both, style=dashed, color=indigo];\n", cur, node->id); // Data flow
+            }
+            ret += "}\n";
 
 
         } else {
