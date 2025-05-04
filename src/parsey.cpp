@@ -13,6 +13,7 @@ NodeRef Parsey::setNodeInfo(TokenInfo& ti, NodeRef node) {
 
 NodeRef Parsey::mkVar(TokenInfo &ti, int level) {
 	auto varNode = std::make_shared<NodeVariable>();
+	setNodeInfo(ti, varNode);
 	varNode->isQuery=(ti.token == Token::NameQuery);
 	varNode->isKnownName = (ti.token == Token::KnownName);
 	varNode->nameFromHead= !(ti.str.length());
@@ -30,7 +31,7 @@ NodeRef Parsey::mkVar(TokenInfo &ti, int level) {
 
 	}
 
-	return setNodeInfo(ti, varNode);
+	return varNode;
 }
 
 NodeRef Parsey::parse(TokenInfo& ti, int level) {
