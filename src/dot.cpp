@@ -19,8 +19,7 @@ using namespace std;
 string nodeToDot(NodeRef node, int level, int parentId)
 {
 
-    string padStr = "";
-    padStr.insert(padStr.begin(), level*2, ' ');
+
     string ret="";
 
     int prev=0;
@@ -28,40 +27,39 @@ string nodeToDot(NodeRef node, int level, int parentId)
     if(node->t == NodeType::Call) {
         const auto call = dynamic_pointer_cast<NodeCall>(node);
         if(call->name == "imp") {
-            ret += format("{}subgraph cluster_{} {{ label=\"Imp #{}\"; color=indigo; bgcolor=mintcream;\n", padStr, node->id,node->id);
+            ret += format("subgraph cluster_{} {{ label=\"Imp #{}\"; color=indigo; bgcolor=mintcream;\n", node->id,node->id);
 
             if(parentId==0) {
-                ret+=format("{}{} [id=\"node_{}\", label=\"Imp #{}\", color=indigo color=blue shape=invhouse style=filled, fillcolor=lightgreen];\n", padStr,node->id, node->id,node->id);
+                ret+=format("{} [id=\"slnode{}\", label=\"Imp #{}\", color=indigo color=blue shape=invhouse style=filled, fillcolor=lightgreen];\n", node->id, node->id,node->id);
             } else {
-                ret+=format("{}{} [label=\"Imp #{}\", color=indigo shape=parallelogram style=filled, fillcolor=lightcyan];\n", padStr,node->id,node->id);
+                ret+=format("{} [id=\"slnode{}\", label=\"Imp #{}\", color=indigo shape=parallelogram style=filled, fillcolor=lightcyan];\n", node->id,node->id,node->id);
             }
 
             for(NodeRef& cn : call->args) {
-                ret += format( "{}{}\n", padStr, nodeToDot(cn, level+1, node->id));
+                ret += format("{}\n", nodeToDot(cn, level+1, node->id));
                 prev=cur;
                 cur=cn->id;
 
                 if(prev) {
-                    ret+=format("{}{} -> {} [color=indigo];\n", padStr,prev, cur); // Control flow
+                    ret+=format("{} -> {} [color=indigo];\n", prev, cur); // Control flow
                 }
             }
 
-            ret += format("{} -> {} [color=green];\n", cur, node->id); // Data flow
+            ret += format("{} -> {} [color=green];\n}}\n", cur, node->id); // Data flow
 
-            ret += format("{}}}\n",padStr);
 
 
         } else {
-            ret += format("{}subgraph cluster_{} {{ label=\"Expr #{}\"; color=yellow; bgcolor=lightgrey;\n", padStr, node->id, node->id);
-            ret+=format("{}{} [label=\"#{} {}\", shape=cds, style=filled, color=yellow, fillcolor=lightyellow];\n", padStr,node->id,node->id, call->name);
+            ret += format("subgraph cluster_{} {{ label=\"Expr #{}\"; color=yellow; bgcolor=lightgrey;\n", node->id, node->id);
+            ret+=format("{} [id=\"slnode{}\", label=\"#{} {}\", shape=cds, style=filled, color=yellow, fillcolor=lightyellow];\n", node->id,node->id,node->id, call->name);
             cur=node->id;
             int argNum=0;
             for(NodeRef& cn : call->args) {
-                ret += format( "{}{}\n", padStr, nodeToDot(cn, level+1, node->id));
+                ret += format("{}\n", nodeToDot(cn, level+1, node->id));
                 prev=cur;
                 cur=cn->id;
 
-                ret+=format("{}{} -> {} [style=invis];\n", padStr,cur, prev); // Data flow
+                ret+=format("{} -> {} [style=invis];\n", cur, prev); // Data flow
 
                 string edgeLabel=format("{}, {}", node->id, argNum++);
 
@@ -83,24 +81,19 @@ string nodeToDot(NodeRef node, int level, int parentId)
                     }
                 }
 
-                ret+=format("{}{} -> {} [dir=both, style=dashed, color=black, label=\"{}\"];\n", padStr, node->id, cur, edgeLabel); // flow
-
+                ret+=format("{} -> {} [dir=both, style=dashed, color=black, label=\"{}\"];\n", node->id, cur, edgeLabel); // flow
             }
-
-            ret += format("{}}}\n",padStr);
+            ret += "}\n";
         }
 
     } else if(node->t == NodeType::Variable) {
         const auto var = dynamic_pointer_cast<NodeVariable>(node);
 
-        ret+=format("{}{} [label=\"{}\", shape=note, style=filled, fillcolor=papayawhip];\n", padStr,node->id, node->toString());
-        ret += format("{}{}\n", padStr, nodeToDot(var->valProvider, level, node->id));
-        ret+=format("{}{} -> {} [dir=both, style=dashed, color=black];\n", padStr, var->valProvider->id, node->id); //  flow
-
-
-
+        ret+=format("{} [label=\"{}\", shape=note, style=filled, fillcolor=papayawhip];\n",node->id, node->toString());
+        ret += format("{}\n", nodeToDot(var->valProvider, level, node->id));
+        ret+=format("{} -> {} [dir=both, style=dashed, color=black];\n", var->valProvider->id, node->id); //  flow
     } else {
-        ret=format("{}{} [label=\"{}\", shape=rect, style=filled, fillcolor=ivory];", padStr,node->id, node->toString());
+        ret=format("{} [id=\"slnode{}\", label=\"{}\", shape=rect, style=filled, fillcolor=ivory];", node->id,node->id, node->toString());
     }
 
 
