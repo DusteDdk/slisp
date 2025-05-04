@@ -41,7 +41,7 @@ class Toker {
 	bool dontConsumeChar=false;
 	TokenInfo token(Token t);
 	TokenInfo token(Token t, std::string txt);
-
+	void advanceTi();
 
 	public:
 	Toker(std::istream& inStream, std::string& fname);

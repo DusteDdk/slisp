@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
     }
     jsonStr += "\n};\n";
 
-    println("<html><head><title>explore {}</title></head><body><center>", argv[1]);
+    println("<html><head><title>explore {}</title></head><body>", argv[1]);
 
     FILE* pipe = popen("dot -Tsvg  -Gid=\"slsvg\"", "w"); // Send output to Graphviz
     if (pipe) {
@@ -209,7 +209,7 @@ let start = { x: 0, y: 0 };
 
 svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
 svg.style.width="100%";
-svg.style.height="75%";
+svg.style.height="50%";
 svg.style.border="1px solid black";
 
 // Handle mouse drag
@@ -278,23 +278,7 @@ function highlightPreLine(preId, lineNumber) {
     std::ifstream in(argv[1]);
     in.read(&content[0], size);
 
-    println("</center><pre id=\"code\">{}</pre><div id=\"debug\" style=\"border: 1px solid black;\"></div><script>{}{}</script></body></html>",content, jsonStr, script);
+    println("<pre id=\"code\">{}</pre><div id=\"debug\" style=\"border: 1px solid black;\"></div><script>{}{}</script></body></html>",content, jsonStr, script);
 
-    
-
-    //    fprintf(pipe, "digraph G { A -> B; }");
-/*
-    println("\n\nJSON:");
-    bool first=true;
-    println("{{");
-    for( string& jl : json) {
-        if(first) {
-            first=false;
-        } else {
-            println(",");
-        }
-        print("  {}", jl);
-    }
-    println("\n}}");*/
 	return 0;
 }

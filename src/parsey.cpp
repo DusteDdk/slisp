@@ -87,6 +87,8 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 	case Token::Begin:
 	{
 		auto callNode = std::make_shared<NodeCall>();
+		setNodeInfo(ti, callNode);
+
 		top.advanceSkipNoOp();
 		if (top.curToken.token != Token::Identifier) {
 			//TODO: Just descend instead to support dynamically selecting call by calling a function that determines the name?
@@ -96,7 +98,6 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 		callNode->ident = std::make_unique<NodeIdent>(top.curToken.str);
 		callNode->name = callNode->ident->str;
 
-		setNodeInfo(ti, callNode);
 
 		while (top.advanceSkipNoOp()) {
 			if (top.curToken.token == Token::End) {

@@ -31,6 +31,10 @@ void Toker::reset(std::string fname)
 
 }
 
+void Toker::advanceTi() {
+	pline=cline;
+	pcolumn=ccolumn;
+}
 
 TokenInfo Toker::token(Token t, std::string txt) {
 	acc = txt;
@@ -47,8 +51,7 @@ TokenInfo Toker::token(Token t)
 		.column = pcolumn,
 	};
 
-	pline=cline;
-	pcolumn=ccolumn;
+	advanceTi();
 	acc="";
 	return ti;
 
@@ -197,6 +200,7 @@ TokenInfo Toker::nextToken() {
 			}
 		}
 		case '@':
+			advanceTi();
 			return token(Token::Loop);
 
 		case '#':
@@ -243,10 +247,13 @@ TokenInfo Toker::nextToken() {
 			break;
 		}
 		case '[':
+			advanceTi();
 			return token(Token::LBegin);
 		case '{':
+			advanceTi();
 			return token(Token::IBegin);
 		case '(':
+			advanceTi();
 			return token(Token::Begin);
 
 		case ')':
