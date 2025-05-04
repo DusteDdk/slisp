@@ -12,15 +12,26 @@
 #include <format>
 #include <print>
 #include "toker.h"
-
+#include <vector>
+#include <filesystem>
 using namespace std;
 
+vector<string> json;
 
 string nodeToDot(NodeRef node, int level, int parentId)
 {
 
+/*
+	Token token=Token::NoOP;
+	std::string str="";
+	std::string file="";
+	int line=0, column=0;
+
+*/
 
     string ret="";
+
+    json.push_back( format("  \"slnode{}\": {{ line: {}, column: {}, tok: \"{}\" }}", node->id, node->origin.line, node->origin.column, tokName(node->origin.token) ));
 
     int prev=0;
     int cur = node->id;
@@ -89,7 +100,7 @@ string nodeToDot(NodeRef node, int level, int parentId)
     } else if(node->t == NodeType::Variable) {
         const auto var = dynamic_pointer_cast<NodeVariable>(node);
 
-        ret+=format("{} [label=\"{}\", shape=note, style=filled, fillcolor=papayawhip];\n",node->id, node->toString());
+        ret+=format("{} [id=\"slnode{}\",label=\"{}\", shape=note, style=filled, fillcolor=papayawhip];\n",node->id,node->id, node->toString());
         ret += format("{}\n", nodeToDot(var->valProvider, level, node->id));
         ret+=format("{} -> {} [dir=both, style=dashed, color=black];\n", var->valProvider->id, node->id); //  flow
     } else {
@@ -103,7 +114,7 @@ string nodeToDot(NodeRef node, int level, int parentId)
 
 string toDot(NodeRef node)
 {
-    return format("digraph G {{ bgcolor=lightblue2;\n{} }}", nodeToDot(node, 1, 0));
+    return format("digraph G {{bgcolor=lightblue2;\n{} }}", nodeToDot(node, 1, 0));
 }
 
 
@@ -129,6 +140,161 @@ int main(int argc, char* argv[]) {
     }
 
     NodeRef firstNode = p.parse( top.curToken );
-    std::println( "{}", toDot( firstNode ) );
+    //println( "{}", toDot( firstNode ) );
+
+    string dotGraph = toDot( firstNode );
+
+    string jsonStr="";
+    bool first=true;
+    jsonStr +="const srcMap = {\n";
+    for( string& jl : json) {
+        if(first) {
+            first=false;
+        } else {
+            jsonStr +=",\n";
+        }
+        jsonStr += jl;
+    }
+    jsonStr += "\n};\n";
+
+    println("<html><head><title>explore {}</title></head><body><center>", argv[1]);
+
+    FILE* pipe = popen("dot -Tsvg  -Gid=\"slsvg\"", "w"); // Send output to Graphviz
+    if (pipe) {
+        fprintf(pipe, "%s\n", dotGraph.c_str() );
+        fclose(pipe);
+    }
+
+    auto script = R"(
+    window.onload = () => {
+        for(const k in srcMap) {
+
+            const node = document.getElementById(k);
+            if(node) {
+            node.onmouseenter = ()=>{
+                //console.log(k);
+
+                highlightPreLine('code', srcMap[k].line);
+                document.getElementById('debug').innerHTML=JSON.stringify( srcMap[k], null, 4);
+
+                const polygon = node.querySelector("polygon");
+
+                // Save the original stroke
+                const originalStroke = polygon.getAttribute("stroke");
+
+                // Set a new stroke color
+                polygon.setAttribute("stroke", "red");
+
+                node.onmouseleave = ()=>{
+                    polygon.setAttribute("stroke", originalStroke);
+                };
+
+            };
+            } else {
+           console.log("Not found",k);
+
+            }
+        }
+        //
+
+
+
+
+const graph = document.getElementById("slsvg");
+const svg = graph.closest("svg");
+
+let viewBox = { x: 0, y: 0, w: 800, h: 600 };  // Match initial viewBox
+let isPanning = false;
+let start = { x: 0, y: 0 };
+
+svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+svg.style.width="100%";
+svg.style.height="75%";
+svg.style.border="1px solid black";
+
+// Handle mouse drag
+svg.addEventListener("mousedown", (e) => {
+  isPanning = true;
+  start = { x: e.clientX, y: e.clientY };
+});
+
+svg.addEventListener("mousemove", (e) => {
+  if (!isPanning) return;
+  const dx = (e.clientX - start.x) * viewBox.w / svg.clientWidth;
+  const dy = (e.clientY - start.y) * viewBox.h / svg.clientHeight;
+  viewBox.x -= dx;
+  viewBox.y -= dy;
+  svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+  start = { x: e.clientX, y: e.clientY };
+});
+
+svg.addEventListener("mouseup", () => isPanning = false);
+svg.addEventListener("mouseleave", () => isPanning = false);
+
+// Handle zoom
+svg.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const zoom = e.deltaY > 0 ? 1.1 : 0.9;
+  const mx = e.offsetX * viewBox.w / svg.clientWidth + viewBox.x;
+  const my = e.offsetY * viewBox.h / svg.clientHeight + viewBox.y;
+
+  viewBox.w *= zoom;
+  viewBox.h *= zoom;
+  viewBox.x = mx - (mx - viewBox.x) * zoom;
+  viewBox.y = my - (my - viewBox.y) * zoom;
+
+  svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+});
+
+const lines = document.getElementById('code').textContent.split('\n');
+function highlightPreLine(preId, lineNumber) {
+  const pre = document.getElementById(preId);
+
+
+  pre.innerHTML = ''; // Clear content to rebuild with spans
+
+  lines.forEach((line, i) => {
+    const span = document.createElement('span');
+    span.style.display = 'block';
+    span.style.whiteSpace = 'pre';
+
+    if (i === lineNumber - 1) {
+      span.style.background = 'yellow';
+    }
+
+    span.textContent = line+"\n";
+    pre.appendChild(span);
+  });
+}
+
+
+
+    };
+    )";
+
+
+    auto size = std::filesystem::file_size(argv[1]);
+    std::string content(size, '\0');
+    std::ifstream in(argv[1]);
+    in.read(&content[0], size);
+
+    println("</center><pre id=\"code\">{}</pre><div id=\"debug\" style=\"border: 1px solid black;\"></div><script>{}{}</script></body></html>",content, jsonStr, script);
+
+    
+
+    //    fprintf(pipe, "digraph G { A -> B; }");
+/*
+    println("\n\nJSON:");
+    bool first=true;
+    println("{{");
+    for( string& jl : json) {
+        if(first) {
+            first=false;
+        } else {
+            println(",");
+        }
+        print("  {}", jl);
+    }
+    println("\n}}");*/
 	return 0;
 }
