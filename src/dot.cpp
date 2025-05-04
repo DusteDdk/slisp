@@ -103,12 +103,15 @@ string nodeToDot(NodeRef node, int level, int parentId)
 
     json.push_back( format("  \"slnode{}\": {{ line: {}, column: {}, tok: \"{}\" }}", node->id, node->origin.line, node->origin.column, tokName(node->origin.token) ));
 
+    string bgCol;
+    string mode = (node->perspect == NodePerspective::Val)?"":"(expr)";
     int prev=0;
     int cur = node->id;
     if(node->t == NodeType::Call) {
         const auto call = dynamic_pointer_cast<NodeCall>(node);
         if(call->name == "imp") {
-            ret += format("subgraph cluster_{} {{ label=\"Imp #{}\"; color=indigo; bgcolor=mintcream;\n", node->id,node->id);
+            bgCol = (node->perspect == NodePerspective::Val)?"mintcream":"ghostwhite";
+            ret += format("subgraph cluster_{} {{ label=\"Imp #{}{}\"; color=indigo; bgcolor={};\n", node->id,node->id, mode, bgCol);
 
             if(parentId==0) {
                 ret+=format("{} [id=\"slnode{}\", label=\"Imp #{}\", color=indigo color=blue shape=invhouse style=filled, fillcolor=lightgreen];\n", node->id, node->id,node->id);
@@ -131,7 +134,9 @@ string nodeToDot(NodeRef node, int level, int parentId)
 
 
         } else {
-            ret += format("subgraph cluster_{} {{ label=\"Expr #{}\"; color=yellow; bgcolor=lightgrey;\n", node->id, node->id);
+            bgCol = (node->perspect == NodePerspective::Val)?"lightgrey":"ghostwhite";
+
+            ret += format("subgraph cluster_{} {{ label=\"#{}{}\"; color=yellow; bgcolor={};\n", node->id, node->id, mode, bgCol);
             ret+=format("{} [id=\"slnode{}\", label=\"#{} {}\", shape=cds, style=filled, color=yellow, fillcolor=lightyellow];\n", node->id,node->id,node->id, call->name);
             cur=node->id;
             int argNum=0;
@@ -193,9 +198,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc == 1) {
 
-        println("Usage: ./{} FILENAME", argv[0]);
-        println("Example:");
-        println("{} | dot -Tsvg > /tmp/img.svg ; feh /tmp/img.svg", argv[0]);
+        println("Usage: ./{} program.slisp > out.html", argv[0]);
         return 1;
 	}
 
