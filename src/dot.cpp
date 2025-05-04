@@ -31,11 +31,11 @@ string nodeToDot(NodeRef node, int level, int parentId)
             ret += format("{}subgraph cluster_{} {{ label=\"Imp #{}\"; color=indigo; bgcolor=mintcream;\n", padStr, node->id,node->id);
 
             if(parentId==0) {
-                ret+=format("nEntryPoint [label=\"Main\", color=blue shape=invhouse style=filled, fillcolor=lightgreen];\n");
-                ret+=format("nEntryPoint -> {} [color=darkblue, style=dashed, dir=both];\n", node->id);
+                ret+=format("{}{} [id=\"node_{}\", label=\"Imp #{}\", color=indigo color=blue shape=invhouse style=filled, fillcolor=lightgreen];\n", padStr,node->id, node->id,node->id);
+            } else {
+                ret+=format("{}{} [label=\"Imp #{}\", color=indigo shape=parallelogram style=filled, fillcolor=lightcyan];\n", padStr,node->id,node->id);
             }
 
-            ret+=format("{}{} [label=\"Imp #{}\", color=indigo shape=parallelogram style=filled, fillcolor=lightcyan];\n", padStr,node->id,node->id);
             for(NodeRef& cn : call->args) {
                 ret += format( "{}{}\n", padStr, nodeToDot(cn, level+1, node->id));
                 prev=cur;
@@ -83,22 +83,20 @@ string nodeToDot(NodeRef node, int level, int parentId)
                     }
                 }
 
-                ret+=format("{}{} -> {} [dir=both, style=dashed, color=black, label=\"{}\"];\n", padStr, node->id, cur, edgeLabel); // Data flow
+                ret+=format("{}{} -> {} [dir=both, style=dashed, color=black, label=\"{}\"];\n", padStr, node->id, cur, edgeLabel); // flow
 
             }
 
             ret += format("{}}}\n",padStr);
-           // ret += format("{} -> {} [color=green];\n", node->id, parentId); // Data flow
         }
 
-       // ret+=format("{}}}; {} -> {};\n", padStr,node->id, node->id) ;
     } else if(node->t == NodeType::Variable) {
         const auto var = dynamic_pointer_cast<NodeVariable>(node);
 
         ret+=format("{}{} [label=\"{}\", shape=note, style=filled, fillcolor=papayawhip];\n", padStr,node->id, node->toString());
         ret += format("{}{}\n", padStr, nodeToDot(var->valProvider, level, node->id));
-        ret += format("{} -> {} [color=darkgreen];\n", var->valProvider->id, node->id); // Data flow
-        ret += format("{} -> {} [color=darkblue];\n", node->id, var->valProvider->id); // Control flow
+        ret+=format("{}{} -> {} [dir=both, style=dashed, color=black];\n", padStr, var->valProvider->id, node->id); //  flow
+
 
 
     } else {
