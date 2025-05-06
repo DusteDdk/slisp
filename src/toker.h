@@ -24,6 +24,7 @@ struct TokenInfo {
 	std::string str="";
 	std::string file="";
 	int line=0, column=0;
+	int eline=0, ecolumn=0;
 };
 class Toker {
 	std::istream& in;

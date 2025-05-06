@@ -49,6 +49,8 @@ TokenInfo Toker::token(Token t)
 		.file=fileName,
 		.line = pline,
 		.column = pcolumn,
+		.eline = cline,
+		.ecolumn = ccolumn,
 	};
 
 	advanceTi();
@@ -382,10 +384,14 @@ void TokenProvider::reset(std::string& fname) {
 	curToken.column=0;
 	curToken.line=0;
 	curToken.str="";
+	curToken.ecolumn=0;
+	curToken.eline=0;
 	curToken.token=Token::NoOP;
 	nxtToken.column=0;
 	nxtToken.line=0;
 	nxtToken.str="";
+	nxtToken.ecolumn=0;
+	nxtToken.eline=0;
 	nxtToken.token=Token::NoOP;
 }
 

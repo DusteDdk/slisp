@@ -101,7 +101,7 @@ string nodeToDot(NodeRef node, int level, int parentId)
 
     string ret="";
 
-    json.push_back( format("  \"slnode{}\": {{ line: {}, column: {}, tok: \"{}\" }}", node->id, node->origin.line, node->origin.column, tokName(node->origin.token) ));
+    json.push_back( format("  \"slnode{}\": {{ line: {}, eline: {}, column: {}, ecolumn: {}, tok: \"{}\" }}", node->id, node->origin.line,node->origin.eline, node->origin.column,node->origin.ecolumn, tokName(node->origin.token) ));
 
     string bgCol;
     string mode = (node->perspect == NodePerspective::Val)?"":"(expr)";
@@ -246,9 +246,9 @@ int main(int argc, char* argv[]) {
             const node = document.getElementById(k);
             if(node) {
             node.onmouseenter = ()=>{
-                //console.log(k);
+                const {line, eline, column, ecolumn} = srcMap[k];
+                highlight(k, line, eline, column, ecolumn);
 
-                highlightPreLine('code', srcMap[k].line);
                 document.getElementById('debug').innerHTML=JSON.stringify( srcMap[k], null, 4);
 
                 const polygon = node.querySelector("polygon");
@@ -321,8 +321,10 @@ svg.addEventListener("wheel", (e) => {
 });
 
 const lines = document.getElementById('code').textContent.split('\n');
-function highlightPreLine(preId, lineNumber) {
-  const pre = document.getElementById(preId);
+
+
+function highlight(nodeId, lineBegin, lineEnd, columnBegin, columnEnd) {
+  const pre = document.getElementById('code');
 
 
   pre.innerHTML = ''; // Clear content to rebuild with spans
@@ -332,7 +334,8 @@ function highlightPreLine(preId, lineNumber) {
     span.style.display = 'block';
     span.style.whiteSpace = 'pre';
 
-    if (i === lineNumber - 1) {
+    const l = i+1;
+    if(l >= lineBegin && l <= lineEnd) {
       span.style.background = 'yellow';
     }
 

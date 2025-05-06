@@ -101,6 +101,8 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 
 		while (top.advanceSkipNoOp()) {
 			if (top.curToken.token == Token::End) {
+				callNode->origin.eline = top.curToken.line;
+				callNode->origin.ecolumn = top.curToken.column;
 				break;
 			}
 
@@ -122,6 +124,8 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 		while (top.advanceSkipNoOp()) {
 
 			if (top.curToken.token == Token::IEnd) {
+				impNode->origin.eline = top.curToken.line;
+				impNode->origin.ecolumn = top.curToken.column;
 				break;
 			}
 
@@ -145,6 +149,8 @@ NodeRef Parsey::parse(TokenInfo& ti, int level) {
 		while (top.advanceSkipNoOp()) {
 
 			if (top.curToken.token == Token::LEnd) {
+				listNode->origin.eline = top.curToken.line;
+				listNode->origin.ecolumn = top.curToken.column;
 				break;
 			}
 

@@ -393,29 +393,29 @@ number: 20
 }
 }
 </pre><div id="debug" style="border: 1px solid black;"></div><script>const srcMap = {
-  "slnode1": { line: 1, column: 1, tok: "Token::IBegin" },
-  "slnode2": { line: 2, column: 1, tok: "Token::Name" },
-  "slnode3": { line: 2, column: 9, tok: "Token::Number" },
-  "slnode4": { line: 3, column: 1, tok: "Token::Name" },
-  "slnode5": { line: 3, column: 9, tok: "Token::Number" },
-  "slnode6": { line: 4, column: 1, tok: "Token::IBegin" },
-  "slnode7": { line: 5, column: 5, tok: "Token::Begin" },
-  "slnode9": { line: 5, column: 9, tok: "Token::Begin" },
-  "slnode11": { line: 5, column: 12, tok: "Token::Number" },
-  "slnode12": { line: 6, column: 9, tok: "Token::IBegin" },
-  "slnode13": { line: 7, column: 13, tok: "Token::KnownName" },
-  "slnode14": { line: 7, column: 22, tok: "Token::Begin" },
-  "slnode16": { line: 7, column: 25, tok: "Token::Identifier" },
-  "slnode17": { line: 7, column: 32, tok: "Token::Identifier" },
-  "slnode18": { line: 8, column: 13, tok: "Token::KnownName" },
-  "slnode19": { line: 8, column: 22, tok: "Token::Begin" },
-  "slnode21": { line: 8, column: 25, tok: "Token::Identifier" },
-  "slnode22": { line: 8, column: 32, tok: "Token::Number" },
-  "slnode23": { line: 9, column: 13, tok: "Token::Loop" },
-  "slnode24": { line: 11, column: 9, tok: "Token::Begin" },
-  "slnode26": { line: 11, column: 15, tok: "Token::String" },
-  "slnode27": { line: 11, column: 30, tok: "Token::Identifier" },
-  "slnode28": { line: 11, column: 37, tok: "Token::Identifier" }
+  "slnode1": { line: 1, eline: 12, column: 1, ecolumn: 1, tok: "Token::IBegin" },
+  "slnode2": { line: 2, eline: 2, column: 1, ecolumn: 8, tok: "Token::Name" },
+  "slnode3": { line: 2, eline: 2, column: 9, ecolumn: 10, tok: "Token::Number" },
+  "slnode4": { line: 3, eline: 3, column: 1, ecolumn: 8, tok: "Token::Name" },
+  "slnode5": { line: 3, eline: 3, column: 9, ecolumn: 11, tok: "Token::Number" },
+  "slnode6": { line: 4, eline: 11, column: 1, ecolumn: 40, tok: "Token::IBegin" },
+  "slnode7": { line: 5, eline: 11, column: 5, ecolumn: 39, tok: "Token::Begin" },
+  "slnode9": { line: 5, eline: 5, column: 9, ecolumn: 13, tok: "Token::Begin" },
+  "slnode11": { line: 5, eline: 5, column: 12, ecolumn: 13, tok: "Token::Number" },
+  "slnode12": { line: 6, eline: 9, column: 9, ecolumn: 13, tok: "Token::IBegin" },
+  "slnode13": { line: 7, eline: 7, column: 13, ecolumn: 20, tok: "Token::KnownName" },
+  "slnode14": { line: 7, eline: 7, column: 22, ecolumn: 38, tok: "Token::Begin" },
+  "slnode16": { line: 7, eline: 7, column: 25, ecolumn: 31, tok: "Token::Identifier" },
+  "slnode17": { line: 7, eline: 7, column: 32, ecolumn: 38, tok: "Token::Identifier" },
+  "slnode18": { line: 8, eline: 8, column: 13, ecolumn: 20, tok: "Token::KnownName" },
+  "slnode19": { line: 8, eline: 8, column: 22, ecolumn: 33, tok: "Token::Begin" },
+  "slnode21": { line: 8, eline: 8, column: 25, ecolumn: 31, tok: "Token::Identifier" },
+  "slnode22": { line: 8, eline: 8, column: 32, ecolumn: 33, tok: "Token::Number" },
+  "slnode23": { line: 9, eline: 9, column: 13, ecolumn: 13, tok: "Token::Loop" },
+  "slnode24": { line: 11, eline: 11, column: 9, ecolumn: 39, tok: "Token::Begin" },
+  "slnode26": { line: 11, eline: 11, column: 15, ecolumn: 28, tok: "Token::String" },
+  "slnode27": { line: 11, eline: 11, column: 30, ecolumn: 36, tok: "Token::Identifier" },
+  "slnode28": { line: 11, eline: 11, column: 37, ecolumn: 39, tok: "Token::Identifier" }
 };
 
     window.onload = () => {
@@ -424,9 +424,9 @@ number: 20
             const node = document.getElementById(k);
             if(node) {
             node.onmouseenter = ()=>{
-                //console.log(k);
+                const {line, eline, column, ecolumn} = srcMap[k];
+                highlight(k, line, eline, column, ecolumn);
 
-                highlightPreLine('code', srcMap[k].line);
                 document.getElementById('debug').innerHTML=JSON.stringify( srcMap[k], null, 4);
 
                 const polygon = node.querySelector("polygon");
@@ -499,8 +499,10 @@ svg.addEventListener("wheel", (e) => {
 });
 
 const lines = document.getElementById('code').textContent.split('\n');
-function highlightPreLine(preId, lineNumber) {
-  const pre = document.getElementById(preId);
+
+
+function highlight(nodeId, lineBegin, lineEnd, columnBegin, columnEnd) {
+  const pre = document.getElementById('code');
 
 
   pre.innerHTML = ''; // Clear content to rebuild with spans
@@ -510,7 +512,8 @@ function highlightPreLine(preId, lineNumber) {
     span.style.display = 'block';
     span.style.whiteSpace = 'pre';
 
-    if (i === lineNumber - 1) {
+    const l = i+1;
+    if(l >= lineBegin && l <= lineEnd) {
       span.style.background = 'yellow';
     }
 
