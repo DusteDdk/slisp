@@ -1,6 +1,8 @@
 #include <ranges>
 #include <functional>
 #include <algorithm>
+#include <string>
+#include <ranges>
 
 #include <format>
 #include <print>
@@ -71,6 +73,49 @@ std::string ScopeCreep::dump()
         ret += std::format("{} / {}: {}\n", x.first, stack, x.second.stack.top()->toString() );
 
     }
+    return ret;
+}
+
+std::string ScopeCreep::vars()
+{
+    std::string ret="Variables:\n";
+    std::vector<std::array<std::string, 3>> cells;
+
+    int l[] = { 0, 0 ,0 };
+    for (auto const& x : storage)
+    {
+        int stackIdx = x.second.stack.size() - 1;
+        std::string stack = std::format( "[{}]{}", stackIdx, stackTrace.at(stackIdx));
+        //ret += std::format("Name: '{}'  Type: {}  Scope: {}\n", x.first,FTypeToString( x.second.stack.top()->t ), stack);
+        std::array<std::string,3> cell( { x.first,FTypeToString( x.second.stack.top()->t ), stack } );
+        cells.push_back( cell );
+        for (auto [i, s] : std::views::enumerate(cell)) {
+            int len = s.length();
+            if(l[i] < len) {
+                l[i] = len;
+            }
+        }
+    }
+
+    int width = l[0] + l[1] + l[2] + 10;
+    auto s =std::string(width, '-') + "\n";
+
+
+    ret += std::format(" {:<{}}   {:<{}}   {:<{}}\n",
+        "Name", l[0],
+        "Type", l[1],
+        "Scope", l[2]);
+    ret += s;
+
+
+    for(auto const& cell : cells) {
+        ret += std::format("| {:<{}} | {:<{}} | {:<{}} |\n",
+            cell[0], l[0],
+            cell[1], l[1],
+            cell[2], l[2]);
+    }
+    ret += s;
+
     return ret;
 }
 

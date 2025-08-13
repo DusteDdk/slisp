@@ -78,6 +78,16 @@
         "__hash_table": "cpp",
         "set": "cpp",
         "*.inc": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "hash_map": "cpp",
+        "condition_variable": "cpp",
+        "numeric": "cpp",
+        "fstream": "cpp",
+        "iomanip": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "cinttypes": "cpp",
+        "text_encoding": "cpp"
     }
 }

@@ -40,6 +40,7 @@ public:
     ScopeCreep() = default;
     std::string trace();
     std::string dump();
+    std::string vars();
     FundamentalRef read(const std::string& varName);
     FundamentalRef write(std::shared_ptr<FundamentalVariableDefinition> vd);
     bool has(std::string& varName);

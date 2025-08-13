@@ -1,6 +1,31 @@
 #include <format>
 #include "fundamental.h"
 
+std::string FTypeToString(enum FType ft) {
+	switch(ft) {
+        case FType::List:
+            return "List";
+        case FType::Number:
+            return "Number";
+        case FType::String:
+            return "String";
+        case FType::Empty:
+            return "Empty";
+        case FType::Error:
+            return "Error";
+        case FType::Loop:
+            return "Loop";
+        case FType::True:
+            return "True";
+        case FType::False:
+            return "False";
+        case FType::Variable:
+            return "Variable";
+        case FType::Expression:
+            return "Expression";
+	}
+	return "Unknown";
+}
 
 FundamentalList::FundamentalList() : Fundamental(FType::List) {}
 FundamentalList::FundamentalList(size_t iSize) : Fundamental(FType::List) {

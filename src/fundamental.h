@@ -6,6 +6,7 @@
 #include <string>
 
 #include "node.h"
+#include <format>
 
 enum class FType : int_fast8_t {
 	List=1,
@@ -19,6 +20,8 @@ enum class FType : int_fast8_t {
 	Variable,
 	Expression,
 };
+
+std::string FTypeToString(enum FType ft);
 
 class Fundamental;
 using FundamentalRef = std::shared_ptr<Fundamental>;
